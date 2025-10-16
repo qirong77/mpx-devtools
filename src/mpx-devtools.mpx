@@ -1,0 +1,1703 @@
+<template>
+    <view>
+        <view
+            class="devtools-container {{ isDrageMove ? 'devtools-floating' : '' }} {{ isCollapsed ? 'devtools-container-collapsed' : '' }}"
+            style="{{ isDrageMove ? 'left: ' + dragPosition.x + '%; top: ' + dragPosition.y + '%; width: ' + containerSize.width + 'rpx; height: ' + containerSize.height + 'rpx;' : '' }}">
+            <view class="header {{ isCollapsed ? 'header-collapsed' : '' }}"
+                bindtouchstart="{{ isDrageMove ? 'onTouchStart' : '' }}"
+                bindtouchmove="{{ isDrageMove ? 'onTouchMove' : '' }}"
+                bindtouchend="{{ isDrageMove ? 'onTouchEnd' : '' }}">
+                <view wx:if="{{ isDrageMove }}" class="drag-indicator">
+                    <text class="drag-icon">⋮⋮</text>
+                </view>
+                <view class="header-top">
+                    <view class="title-section">
+                        <text class="title">🌲 MPX DevTools</text>
+                    </view>
+
+                    <view wx:if="{{ !isCollapsed }}" class="status-section" style="margin-left: 4px;">
+                        <text class="update-time" bindtap="updateComponentTree">🕒 刷新</text>
+                    </view>
+                    <view class="status-section">
+                        <view class="collapse-toggle-btn" bindtap="toggleCollapseGlobal">
+                            <text class="collapse-toggle-icon">{{ isCollapsed ? '📋' : '📁' }}</text>
+                            <text class="collapse-toggle-text">{{ isCollapsed ? '展开' : '收起' }}</text>
+                        </view>
+                    </view>
+                </view>
+                <view wx:if="{{ !isCollapsed }}"
+                    class="filter-container  {{ searchMode === 'component' ? 'filter-wrapper-component' : 'filter-wrapper-data' }}">
+                    <view class="filter-wrapper">
+                        <text class="filter-icon">🔍</text>
+                        <input class="filter-input"
+                            placeholder="{{ searchMode === 'component' ? '搜索组件（双击输入框搜索数据）' : '搜索数据（双击输入框搜索组件）' }}"
+                            value="{{ filterText }}" bindinput="onFilterInput" bindconfirm="onFilterConfirm"
+                            bindtap="onInputDoubleClick" />
+                        <view wx:if="{{ filterText }}" class="clear-btn" bindtap="clearFilter">
+                            <text class="clear-icon">×</text>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="devtools-main" wx:if="{{ !isCollapsed }}">
+                <view class="tree-container" wx:if="{{ visibleNodesWithDisplayName.length > 0 }}">
+                    <view wx:for="{{ visibleNodesWithDisplayName }}" wx:key="index" class="tree-node"
+                        style="padding-left: {{item.level * 20}}px;">
+                        <view class="node-content">
+                            <view class="collapse-btn" style="opacity: {{ item.hasChildren ? 1 : 0.3 }}"
+                                bindtap="toggleCollapse" data-index="{{ index }}">
+                                <text class="collapse-icon">{{ item.collapsed ? '+' : '-' }}</text>
+                            </view>
+                            <view class="info-btn" bindtap="showComponentInfo" data-index="{{ index }}">
+                                <text class="info-icon">!</text>
+                            </view>
+                            <view class="file-src-container">
+                                <text class="node-text {{ item.isHighlighted ? 'highlighted' : '' }}">{{
+                                    item.displayFileName }}</text>
+                                <view wx:if="{{ item.matchedProperties.length > 0 }}" class="matched-properties">
+                                    <text wx:for="{{ item.matchedProperties }}" wx:key="prop" class="matched-prop">{{
+                                        item
+                                        }}</text>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+                <view wx:else class="empty-state">
+                    <text class="empty-text">暂无组件数据</text>
+                    <text class="empty-hint">请点击右上角刷新按钮获取最新组件树<br />或修改过滤条件</text>
+                </view>
+            </view>
+
+
+
+            <!-- 拉伸控制器 -->
+            <view wx:if="{{ isDrageMove && !isCollapsed }}" class="resize-controls">
+                <!-- 右下角拉伸控制器 -->
+                <view class="resize-handle resize-handle-br" bindtouchstart="onResizeStart" bindtouchmove="onTouchMove"
+                    bindtouchend="onTouchEnd" data-action="resize">
+                    <text class="resize-icon">⟲</text>
+                </view>
+                <!-- 左下角拉伸控制器 -->
+                <!-- <view class="resize-handle resize-handle-bl" bindtouchstart="onResizeStart" bindtouchmove="onTouchMove"
+                    bindtouchend="onTouchEnd" data-action="resize">
+                    <text class="resize-icon">⟳</text>
+                </view> -->
+            </view>
+        </view>
+        <!-- 组件信息弹窗 -->
+        <view wx:if="{{ showInfoModal }}" class="modal-overlay" bindtap="closeInfoModal">
+            <view class="info-modal" catchtap="preventClose">
+                <view class="modal-header">
+                    <text class="modal-title">组件信息</text>
+                    <view class="close-btn" bindtap="closeInfoModal">
+                        <text class="close-icon">×</text>
+                    </view>
+                </view>
+
+                <view class="modal-content">
+                    <view class="component-path">
+                        <text class="path-label">组件路径:</text>
+                        <text class="path-text">{{ currentComponentInfo.fileSrc }}</text>
+                    </view>
+
+                    <!-- Props 部分 -->
+                    <view class="section">
+                        <view class="section-header">
+                            <text class="section-title">Props ({{ currentComponentInfo.propsCount }})</text>
+                        </view>
+                        <view class="section-content">
+                            <block wx:if="{{ currentComponentInfo.props && currentComponentInfo.props.length > 0 }}">
+                                <view wx:for="{{ currentComponentInfo.props }}" wx:key="key" class="property-item">
+                                    <view class="property-content" wx:if="{{ !item.isExpandable }}">
+                                        <view class="copy-btn" bindtap="copyPropertyValue"
+                                            data-value="{{ item.item.expandedValue ||  item.displayValue }}"
+                                            data-key="{{ item.key }}" data-type="props">
+                                            <text class="copy-icon">📋</text>
+                                        </view>
+                                        <text class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
+                                            item.key }}:</text>
+
+                                        <text class="property-value" style="color: {{ item.valueColor }}">{{
+                                            item.displayValue }}</text>
+
+                                    </view>
+                                    <view class="property-content expandable" wx:else>
+                                        <view class="expandable-header" bindtap="toggleObjectExpand"
+                                            data-path="{{ item.path }}" data-type="props">
+                                            <view class="copy-btn copy-btn-expandable" bindtap="copyPropertyValue"
+                                                data-value="{{ item.expandedValue }}" data-key="{{ item.key }}"
+                                                data-type="props" catchtap="preventToggle">
+                                                <text class="copy-icon">📋</text>
+                                            </view>
+                                            <text
+                                                class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
+                                                    item.key }}:</text>
+                                            <text class="expand-icon">{{ item.expanded ? '−' : '+' }}</text>
+
+                                            <text class="property-value" style="color: {{ item.valueColor }}">{{
+                                                item.collapsedValue }}</text>
+                                        </view>
+
+                                    </view>
+                                    <view wx:if="{{ item.expanded }}" class="expanded-content-wrapper">
+                                        <view bindtap="toggleObjectExpand" data-path="{{ item.path }}" data-type="props"
+                                            class="property-value" style="color: {{ item.valueColor }}">
+                                            {{ item.displayValue }}
+                                        </view>
+                                    </view>
+                                </view>
+                            </block>
+                            <text wx:else class="empty-text">无 Props 数据</text>
+                        </view>
+                    </view>
+
+                    <!-- Data 部分 -->
+                    <view class="section">
+                        <view class="section-header">
+                            <text class="section-title">Data ({{ currentComponentInfo.dataCount }})</text>
+                        </view>
+                        <view class="section-content">
+                            <block wx:if="{{ currentComponentInfo.data && currentComponentInfo.data.length > 0 }}">
+                                <view wx:for="{{ currentComponentInfo.data }}" wx:key="key" class="property-item">
+                                    <view class="property-content" wx:if="{{ !item.isExpandable }}">
+                                        <view class="copy-btn" bindtap="copyPropertyValue"
+                                            data-value="{{ item.expandedValue || item.displayValue }}"
+                                            data-key="{{ item.key }}" data-type="data">
+                                            <text class="copy-icon">📋</text>
+                                        </view>
+                                        <text class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
+                                            item.key }}:</text>
+
+                                        <text class="property-value" style="color: {{ item.valueColor }}">{{
+                                            item.displayValue }}</text>
+
+                                    </view>
+                                    <view class="property-content expandable" wx:else>
+                                        <view class="expandable-header" bindtap="toggleObjectExpand"
+                                            data-path="{{ item.path }}" data-type="data">
+                                            <text class="expand-icon">{{ item.expanded ? '−' : '+' }}</text>
+                                            <view class="copy-btn copy-btn-expandable" bindtap="copyPropertyValue"
+                                                data-value="{{ item.expandedValue }}" data-key="{{ item.key }}"
+                                                data-type="data" catchtap="preventToggle">
+                                                <text class="copy-icon">📋</text>
+                                            </view>
+                                            <text
+                                                class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
+                                                    item.key }}:</text>
+                                            <text class="property-value" style="color: {{ item.valueColor }}">{{
+                                                item.collapsedValue }}</text>
+                                        </view>
+
+                                    </view>
+                                    <view wx:if="{{ item.expanded }}" class="expanded-content-wrapper">
+                                        <view bindtap="toggleObjectExpand" data-path="{{ item.path }}" data-type="data"
+                                            class="property-value" style="color: {{ item.valueColor }}">
+                                            {{ item.displayValue }}
+                                        </view>
+                                    </view>
+                                </view>
+                            </block>
+                            <text wx:else class="empty-text">无 Data 数据</text>
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </view>
+
+</template>
+
+<script>
+import { createComponent } from '@mpxjs/core'
+
+createComponent({
+    data: {
+        isDrageMove: true,
+        componentTree: null,
+        flattenTree: [],
+        visibleNodes: [],
+        updateTime: '',
+        timer: null,
+        showInfoModal: false,
+        currentComponentInfo: null,
+        filterText: '',
+        rootInstance: null,
+        searchMode: 'component', // 'component' or 'data'
+        lastTapTime: 0,
+        dataSearchResults: new Map(), // 存储数据搜索结果
+        isCollapsed: false,
+        // 拖拽相关数据
+        dragPosition: { x: 50, y: 50 }, // 悬浮时的位置 (百分比)
+        containerSize: { width: 600, height: 400 }, // 容器尺寸 (rpx)
+        isDragging: false,
+        isResizing: false,
+        dragStartPos: { x: 0, y: 0 },
+        dragOffset: { x: 0, y: 0 },
+        resizeStartPos: { x: 0, y: 0 },
+        resizeStartSize: { width: 0, height: 0 }
+    },
+
+    methods: {
+        // 本地存储相关方法
+        saveToStorage() {
+            try {
+                const storageData = {
+                    isCollapsed: this.isCollapsed,
+                    dragPosition: this.dragPosition,
+                    containerSize: this.containerSize
+                }
+                wx.setStorageSync('mpx-devtools-settings', JSON.stringify(storageData))
+            } catch (error) {
+                console.debug('Save storage failed:', error)
+            }
+        },
+
+        loadFromStorage() {
+            try {
+                const storageData = wx.getStorageSync('mpx-devtools-settings')
+                if (storageData) {
+                    const data = JSON.parse(storageData)
+                    if (typeof data.isCollapsed === 'boolean') {
+                        this.isCollapsed = data.isCollapsed
+                    }
+                    if (data.dragPosition && typeof data.dragPosition.x === 'number' && typeof data.dragPosition.y === 'number') {
+                        this.dragPosition = { ...data.dragPosition }
+                    }
+                    if (data.containerSize && typeof data.containerSize.width === 'number' && typeof data.containerSize.height === 'number') {
+                        this.containerSize = { ...data.containerSize }
+                    }
+                }
+            } catch (error) {
+                console.debug('Load storage failed:', error)
+            }
+        },
+
+        // 拖拽相关方法
+        onTouchStart(e) {
+            if (!this.isDrageMove) return
+
+            const touch = e.touches[0]
+            const target = e.currentTarget.dataset.action
+
+            if (target === 'resize') {
+                this.isResizing = true
+                this.resizeStartPos = {
+                    x: touch.pageX,
+                    y: touch.pageY
+                }
+                this.resizeStartSize = { ...this.containerSize }
+            } else {
+                this.isDragging = true
+                this.dragStartPos = {
+                    x: touch.pageX,
+                    y: touch.pageY
+                }
+            }
+        },
+
+        onTouchMove(e) {
+            if (!this.isDrageMove) return
+
+            const touch = e.touches[0]
+
+            // 节流处理，减少卡顿
+            if (this._throttleTimer) return
+            this._throttleTimer = setTimeout(() => {
+                this._throttleTimer = null
+            }, 16) // 约60fps
+
+            if (this.isResizing) {
+                // 拉伸逻辑
+                const deltaX = touch.pageX - this.resizeStartPos.x
+                const deltaY = touch.pageY - this.resizeStartPos.y
+
+                let newWidth = this.resizeStartSize.width + deltaX * 2 // rpx转换
+                let newHeight = this.resizeStartSize.height + deltaY * 2 // rpx转换
+
+
+                this.containerSize = {
+                    width: newWidth,
+                    height: newHeight
+                }
+            } else if (this.isDragging) {
+                // 拖拽逻辑
+                const systemInfo = wx.getSystemInfoSync()
+                const windowWidth = systemInfo.windowWidth
+                const windowHeight = systemInfo.windowHeight
+
+                const deltaX = touch.pageX - this.dragStartPos.x
+                const deltaY = touch.pageY - this.dragStartPos.y
+
+                let newX = this.dragPosition.x + (deltaX / windowWidth) * 100
+                let newY = this.dragPosition.y + (deltaY / windowHeight) * 100
+
+                // 边界限制
+                newX = Math.max(0, Math.min(70, newX))
+                newY = Math.max(0, Math.min(80, newY))
+
+                this.dragPosition = { x: newX, y: newY }
+
+                // 更新起始位置
+                this.dragStartPos = {
+                    x: touch.pageX,
+                    y: touch.pageY
+                }
+            }
+        },
+
+        onTouchEnd(e) {
+            if (!this.isDrageMove) return
+
+            this.isDragging = false
+            this.isResizing = false
+            this.saveToStorage() // 拖拽或拉伸结束后保存
+        },
+
+        // 拉伸按钮的触摸事件
+        onResizeStart(e) {
+            if (!this.isDrageMove) return
+
+            const touch = e.touches[0]
+            this.isResizing = true
+            this.resizeStartPos = {
+                x: touch.pageX,
+                y: touch.pageY
+            }
+            this.resizeStartSize = { ...this.containerSize }
+        },
+
+        toggleCollapseGlobal() {
+            this.isCollapsed = !this.isCollapsed;
+            this.saveToStorage(); // 折叠状态改变时保存
+        },
+        updateComponentTree() {
+            try {
+                // 检查 wx.mpxDevTools 是否可用
+                if (!wx.mpxDevTools || typeof wx.mpxDevTools.getInstanceTreeRoot !== 'function') {
+                    console.debug('MPX DevTools API not available yet')
+                    return
+                }
+
+                const tree = wx.mpxDevTools.getInstanceTreeRoot()
+
+                // 检查是否获取到有效的组件树
+                if (!tree) {
+                    console.debug('No component tree available yet')
+                    return
+                }
+
+                wx.mpxDevToolsComponentRoot = tree
+                this.componentTree = tree
+                this.flattenTree = this.flattenTreeData(tree, 0, -1, [])
+                this.updateVisibleNodes()
+                this.updateTime = this.formatTime(new Date())
+                console.debug('Component tree updated successfully:', tree)
+            } catch (error) {
+                console.debug('Error updating component tree:', error)
+            }
+        },
+
+        flattenTreeData(node, level, parentIndex = -1, allNodes = []) {
+            if (!node || !node.component) return []
+
+            try {
+                // 安全地获取文件路径
+                const fileSrc = node.component?.MpxDevtoolsComponentInfo?.data?.__mpx_file_src__ || 'unknown'
+                const hasChildren = node.children && node.children.length > 0
+
+                const currentIndex = allNodes.length
+                const currentNode = {
+                    level: level,
+                    fileSrc: fileSrc,
+                    hasChildren: hasChildren,
+                    collapsed: false,
+                    parentIndex: parentIndex
+                }
+
+                allNodes.push(currentNode)
+
+                // 递归处理子节点
+                if (hasChildren) {
+                    node.children.forEach(child => {
+                        this.flattenTreeData(child, level + 1, currentIndex, allNodes)
+                    })
+                }
+
+                return allNodes
+            } catch (error) {
+                console.error('Error flattening tree node:', error, node)
+                return allNodes
+            }
+        },
+
+        updateVisibleNodes() {
+            const visible = []
+
+            // 如果是数据搜索模式，先执行数据搜索
+            if (this.searchMode === 'data' && this.filterText) {
+                this.performDataSearch()
+            }
+
+            for (let i = 0; i < this.flattenTree.length; i++) {
+                const node = this.flattenTree[i]
+
+                // 检查父节点是否被折叠
+                let isVisible = true
+                let checkIndex = node.parentIndex
+
+                while (checkIndex >= 0 && isVisible) {
+                    const parentNode = this.flattenTree[checkIndex]
+                    if (parentNode.collapsed) {
+                        isVisible = false
+                    }
+                    checkIndex = parentNode.parentIndex
+                }
+
+                // 检查是否通过过滤条件
+                if (isVisible && this.filterText) {
+                    if (this.searchMode === 'component') {
+                        // 组件搜索模式
+                        const displayFileName = this.getDisplayFileName(node.fileSrc)
+                        if (!displayFileName.toLowerCase().includes(this.filterText.toLowerCase())) {
+                            isVisible = false
+                        }
+                    } else if (this.searchMode === 'data') {
+                        // 数据搜索模式：检查是否在搜索结果中
+                        const searchResult = this.dataSearchResults.get(node.fileSrc)
+                        if (!searchResult || !searchResult.isInPath) {
+                            isVisible = false
+                        }
+                    }
+                }
+
+                if (isVisible) {
+                    const searchResult = this.dataSearchResults.get(node.fileSrc)
+                    visible.push({
+                        ...node,
+                        index: i, // 保存原始索引用于折叠操作
+                        isHighlighted: searchResult && searchResult.hasMatch,
+                        matchedProperties: searchResult ? searchResult.matchedProperties : []
+                    })
+                }
+            }
+
+            this.visibleNodes = visible
+        },
+
+        toggleCollapse(e) {
+            const visibleIndex = parseInt(e.currentTarget.dataset.index)
+            const node = this.visibleNodes[visibleIndex]
+
+            // 只有有子组件的节点才允许折叠
+            if (!node.hasChildren) {
+                return
+            }
+
+            const originalIndex = node.index
+
+            console.log('Toggle collapse:', {
+                visibleIndex,
+                originalIndex,
+                currentState: this.flattenTree[originalIndex].collapsed
+            })
+
+            // 切换折叠状态
+            this.flattenTree[originalIndex].collapsed = !this.flattenTree[originalIndex].collapsed
+
+            // 更新可见节点
+            this.updateVisibleNodes()
+        },
+
+        showComponentInfo(e) {
+            const visibleIndex = parseInt(e.currentTarget.dataset.index)
+            const node = this.visibleNodes[visibleIndex]
+
+            // 获取组件实例数据
+            const componentInstance = this.getComponentInstance(node)
+            if (!componentInstance) {
+                wx.showToast({
+                    title: '无法获取组件信息',
+                    icon: 'none'
+                })
+                return
+            }
+
+            console.log('Component instance:', componentInstance)
+
+            const componentInfo = this.parseComponentInfo(componentInstance, node.fileSrc)
+
+            // 保存组件实例引用，用于后续的展开操作
+            this.currentComponentInfo = {
+                ...componentInfo,
+                componentInstance: componentInstance
+            }
+            this.showInfoModal = true
+        },
+
+        getComponentInstance(node) {
+            // 根据组件树查找对应的组件实例
+            // 这里需要遍历组件树找到对应的组件
+            try {
+                const findComponent = (treeNode, targetSrc) => {
+                    if (!treeNode) return null
+
+                    const fileSrc = treeNode.component?.MpxDevtoolsComponentInfo?.data?.__mpx_file_src__
+                    if (fileSrc === targetSrc) {
+                        return treeNode.component
+                    }
+
+                    if (treeNode.children) {
+                        for (let child of treeNode.children) {
+                            const result = findComponent(child, targetSrc)
+                            if (result) return result
+                        }
+                    }
+                    return null
+                }
+
+                return findComponent(this.componentTree, node.fileSrc)
+            } catch (error) {
+                console.error('Error finding component:', error)
+                return null
+            }
+        },
+
+        parseComponentInfo(component, fileSrc) {
+            const props = this.parseObjectProperties(component.MpxDevtoolsComponentInfo?.props || {}, 'props', component)
+            const data = this.parseObjectProperties(component.MpxDevtoolsComponentInfo?.data || {}, 'data', component)
+            const computed = this.parseObjectProperties(component.MpxDevtoolsComponentInfo?.computed || {}, 'computed', component)
+
+            return {
+                fileSrc: fileSrc,
+                props: props,
+                data: data,
+                computed,
+                propsCount: Object.keys(component.MpxDevtoolsComponentInfo?.props || {}).length,
+                dataCount: Object.keys(component.MpxDevtoolsComponentInfo?.data || {}).length,
+                computedCount: Object.keys(component.MpxDevtoolsComponentInfo?.computed || {}).length
+            }
+        },
+
+        parseObjectProperties(obj, basePath = '', instance) {
+            const result = []
+            for (let key in obj) {
+                if (key === '__mpx_file_src__') {
+                    continue
+                }
+                const rawValue = instance[key]
+                const type = this.getValueType(rawValue)
+                const path = basePath ? `${basePath}.${key}` : key
+
+                // 判断是否是可展开的类型
+                const isExpandable = type === 'Array' || type === 'Object'
+                const isExpanded = false // 默认折叠状态
+
+                // 为长内容创建不同的显示版本
+                let collapsedValue, expandedValue
+
+                if (isExpandable) {
+                    collapsedValue = this.formatValue(rawValue, true) // 折叠状态
+                    expandedValue = this.getFullFormattedValue(rawValue) // 展开状态，显示完整内容
+                } else {
+                    collapsedValue = expandedValue = this.formatValue(rawValue, true)
+                }
+
+                // 检查是否匹配当前搜索条件
+                let isMatched = false
+                if (this.searchMode === 'data' && this.filterText) {
+                    const searchText = this.filterText.toLowerCase()
+                    isMatched = this.searchInValue(rawValue, searchText)
+                }
+
+                const node = {
+                    key: key,
+                    value: rawValue,
+                    displayValue: collapsedValue, // 默认显示折叠状态
+                    collapsedValue: collapsedValue, // 折叠时的显示
+                    expandedValue: expandedValue, // 展开时的显示
+                    valueColor: this.getValueColor(type),
+                    type: type,
+                    path: path,
+                    isExpandable: isExpandable,
+                    expanded: isExpanded,
+                    children: [],
+                    isMatched: isMatched // 添加匹配标识
+                }
+                result.push(node)
+            }
+
+            return result
+        },
+
+        getValueType(value) {
+            if (value === null) return 'null'
+            if (value === undefined) return 'undefined'
+            if (typeof value === 'string') return 'string'
+            if (typeof value === 'number') return 'number'
+            if (typeof value === 'boolean') return 'boolean'
+            if (typeof value === 'function') return 'function'
+            if (Array.isArray(value)) return 'Array'
+            if (typeof value === 'object') return 'Object'
+            return 'unknown'
+        },
+
+        formatValue(value, isCollapsed = true) {
+            const type = this.getValueType(value)
+            switch (type) {
+                case 'string':
+                    return `"${value}"`
+                case 'number':
+                case 'boolean':
+                    return String(value)
+                case 'null':
+                    return 'null'
+                case 'undefined':
+                    return 'undefined'
+                case 'function':
+                    return 'function() {...}'
+                case 'Array':
+                    if (isCollapsed) {
+                        return `Array(${value.length})`
+                    }
+                    try {
+                        return this.formatJsonWithIndent(value)
+                    } catch (error) {
+                        console.debug('Error stringifying array:', error)
+                        return `Array(${value.length})`
+                    }
+                case 'Object':
+                    if (isCollapsed) {
+                        const keys = Object.keys(value)
+                        return `{${keys.length} ${keys.length === 1 ? 'key' : 'keys'}}`
+                    }
+                    try {
+                        return this.formatJsonWithIndent(value)
+                    } catch (error) {
+                        console.debug('Error stringifying object:', error)
+                        const keys = Object.keys(value)
+                        return `{${keys.length} ${keys.length === 1 ? 'key' : 'keys'}}`
+                    }
+                default:
+                    return String(value)
+            }
+        },
+
+        // 格式化 JSON 并添加正确的缩进（已弃用，使用 getFullFormattedValue 替代）
+        formatJsonWithIndent(value) {
+            // 直接调用 getFullFormattedValue 以保持一致性
+            return this.getFullFormattedValue(value)
+        },
+
+        // 获取完整格式化的内容
+        getFullFormattedValue(value) {
+            try {
+                const jsonStr = JSON.stringify(value, null, 2)
+                // 添加适当的缩进以在小程序中正确显示
+                return jsonStr.split('\n').map((line, index) => {
+                    if (index === 0) return line
+                    return `  ${line}` // 添加两个空格的缩进
+                }).join('\n')
+            } catch (error) {
+                console.debug('Error formatting value:', error)
+                const type = this.getValueType(value)
+                if (type === 'Array') {
+                    return `Array(${value.length}) [无法序列化]`
+                } else if (type === 'Object') {
+                    const keys = Object.keys(value)
+                    return `{${keys.length} ${keys.length === 1 ? 'key' : 'keys'}} [无法序列化]`
+                }
+                return String(value)
+            }
+        },
+
+        getValueColor(type) {
+            switch (type) {
+                case 'string': return '#d14'
+                case 'number': return '#005cc5'
+                case 'boolean': return '#d73a49'
+                case 'null':
+                case 'undefined': return '#6f42c1'
+                case 'function': return '#e36209'
+                case 'Array': return '#22863a'
+                case 'Object': return '#6f42c1'
+                default: return '#333'
+            }
+        },
+
+
+
+        toggleObjectExpand(e) {
+            const path = e.currentTarget.dataset.path
+            const type = e.currentTarget.dataset.type
+
+            console.log('Toggle expand:', { path, type })
+
+            // 根据类型找到对应的数据源
+            let targetArray = null
+            switch (type) {
+                case 'props':
+                    targetArray = this.currentComponentInfo.props
+                    break
+                case 'data':
+                    targetArray = this.currentComponentInfo.data
+                    break
+                case 'computed':
+                    targetArray = this.currentComponentInfo.computed
+                    break
+                default:
+                    return
+            }
+
+            // 查找并切换展开状态
+            const item = targetArray.find(item => item.path === path)
+            if (item && item.isExpandable) {
+                // 简单的二级切换：折叠 <-> 展开
+                item.expanded = !item.expanded
+                item.displayValue = item.expanded ? item.expandedValue : item.collapsedValue
+
+                console.log('Toggle state:', {
+                    path: path,
+                    expanded: item.expanded
+                })
+            }
+        },
+
+        closeInfoModal() {
+            this.showInfoModal = false
+            this.currentComponentInfo = null
+        },
+
+        preventClose() {
+            // 阻止事件冒泡，防止点击弹窗内容时关闭
+        },
+
+        // 阻止复制按钮触发展开/收起
+        preventToggle(e) {
+            // 阻止事件冒泡
+        },
+
+        // 复制属性值
+        copyPropertyValue(e) {
+            const { value, key, type } = e.currentTarget.dataset
+
+            try {
+                // 在小程序中使用 wx.setClipboardData 来复制内容
+                wx.setClipboardData({
+                    data: value || '',
+                    success: () => {
+                        wx.showToast({
+                            title: `已复制${key}`,
+                            icon: 'success',
+                            duration: 1500
+                        })
+                    },
+                    fail: (error) => {
+                        console.error('复制失败:', error)
+                        wx.showToast({
+                            title: '复制失败',
+                            icon: 'none',
+                            duration: 1500
+                        })
+                    }
+                })
+            } catch (error) {
+                console.error('复制操作异常:', error)
+                wx.showToast({
+                    title: '复制功能不可用',
+                    icon: 'none',
+                    duration: 1500
+                })
+            }
+        },
+
+        formatTime(date) {
+            const hours = date.getHours().toString().padStart(2, '0')
+            const minutes = date.getMinutes().toString().padStart(2, '0')
+            const seconds = date.getSeconds().toString().padStart(2, '0')
+            return `${hours}:${minutes}:${seconds}`
+        },
+
+        // 格式化文件名显示
+        getDisplayFileName(fileSrc = '') {
+            if (!fileSrc) {
+                return '未知组件'
+            }
+
+            // 提取文件名（去掉路径）
+            const fileName = fileSrc.split('/').pop()
+            // 如果没有文件名或者文件名为空，返回默认值
+            if (!fileName || fileName.trim() === '') {
+                return '未知组件'
+            }
+
+            return fileName
+        },
+
+        // 处理过滤输入
+        onFilterInput(e) {
+            this.filterText = e.detail.value
+            if (this.searchMode === 'data') {
+                this.dataSearchResults.clear()
+            }
+            this.updateVisibleNodes()
+        },
+
+        // 处理确认输入
+        onFilterConfirm(e) {
+            this.filterText = e.detail.value
+            if (this.searchMode === 'data') {
+                this.dataSearchResults.clear()
+            }
+            this.updateVisibleNodes()
+        },
+
+        // 清除过滤
+        clearFilter() {
+            this.filterText = ''
+            this.dataSearchResults.clear()
+            this.updateVisibleNodes()
+        },
+
+        // 处理输入框双击，切换搜索模式
+        onInputDoubleClick() {
+            const now = Date.now()
+            if (now - this.lastTapTime < 300) {
+                // 双击检测
+                this.searchMode = this.searchMode === 'component' ? 'data' : 'component'
+                this.dataSearchResults.clear()
+                this.updateVisibleNodes()
+                wx.showToast({
+                    title: this.searchMode === 'component' ? '切换到组件搜索' : '切换到数据搜索',
+                    icon: 'none',
+                    duration: 1000
+                })
+            }
+            this.lastTapTime = now
+        },
+
+        // 执行数据搜索
+        performDataSearch() {
+            if (!this.filterText || !this.componentTree) {
+                this.dataSearchResults.clear()
+                return
+            }
+
+            const searchText = this.filterText.toLowerCase()
+            const results = new Map()
+
+            // 递归搜索组件树
+            const searchInComponent = (treeNode, path = []) => {
+                if (!treeNode || !treeNode.component) return
+
+                const component = treeNode.component
+                const fileSrc = component.MpxDevtoolsComponentInfo?.data?.__mpx_file_src__
+                if (!fileSrc) return
+
+                const currentPath = [...path, fileSrc]
+                let hasDirectMatch = false
+                let matchedProperties = []
+
+                // 搜索组件的 data, props, computed
+                const searchInProperties = (obj, type) => {
+                    if (!obj) return []
+                    const matches = []
+
+                    Object.keys(obj).forEach(key => {
+                        const value = component[key]
+                        if (this.searchInValue(value, searchText)) {
+                            matches.push(`${type}.${key}`)
+                        }
+                    })
+                    return matches
+                }
+
+                // 搜索各种属性
+                const dataMatches = searchInProperties(component.MpxDevtoolsComponentInfo?.data || {}, 'data')
+                const propsMatches = searchInProperties(component.MpxDevtoolsComponentInfo?.props || {}, 'props')
+                const computedMatches = searchInProperties(component.MpxDevtoolsComponentInfo?.computed || {}, 'computed')
+
+                matchedProperties = [...dataMatches, ...propsMatches, ...computedMatches]
+                hasDirectMatch = matchedProperties.length > 0
+
+                // 如果当前组件有匹配，标记整个路径
+                if (hasDirectMatch) {
+                    currentPath.forEach(pathFileSrc => {
+                        if (!results.has(pathFileSrc)) {
+                            results.set(pathFileSrc, {
+                                hasMatch: false,
+                                isInPath: false,
+                                matchedProperties: []
+                            })
+                        }
+                        const existingResult = results.get(pathFileSrc)
+                        existingResult.isInPath = true
+
+                        // 如果是当前组件，标记为有直接匹配
+                        if (pathFileSrc === fileSrc) {
+                            existingResult.hasMatch = true
+                            existingResult.matchedProperties = matchedProperties
+                        }
+                    })
+                }
+
+                // 递归搜索子组件
+                if (treeNode.children) {
+                    treeNode.children.forEach(child => {
+                        searchInComponent(child, currentPath)
+                    })
+                }
+            }
+
+            searchInComponent(this.componentTree)
+            this.dataSearchResults = results
+        },
+
+        // 在值中搜索文本
+        searchInValue(value, searchText) {
+            if (value === null || value === undefined) {
+                return false
+            }
+
+            if (typeof value === 'string') {
+                return value.toLowerCase().includes(searchText)
+            }
+
+            if (typeof value === 'number' || typeof value === 'boolean') {
+                return String(value).toLowerCase().includes(searchText)
+            }
+
+            if (Array.isArray(value)) {
+                return value.some(item => this.searchInValue(item, searchText)) ||
+                    JSON.stringify(value).toLowerCase().includes(searchText)
+            }
+
+            if (typeof value === 'object') {
+                try {
+                    return JSON.stringify(value).toLowerCase().includes(searchText) ||
+                        Object.keys(value).some(key =>
+                            key.toLowerCase().includes(searchText) ||
+                            this.searchInValue(value[key], searchText)
+                        )
+                } catch (error) {
+                    return false
+                }
+            }
+
+            return false
+        }
+    },
+    created() {
+        console.debug('MPX DevTools component mounted')
+
+        // 加载存储的设置
+        this.loadFromStorage()
+
+        // 延迟初始化，等待 MPX DevTools API 准备就绪
+        const initDevTools = () => {
+            if (wx.mpxDevTools && typeof wx.mpxDevTools.getInstanceTreeRoot === 'function') {
+                console.debug('MPX DevTools API is ready, initializing...')
+                this.updateComponentTree()
+
+                // 设置定时器，定期刷新组件树
+                this.timer = setInterval(() => {
+                    console.debug('Auto-refreshing component tree')
+                    this.updateComponentTree()
+                }, 10000) // 每10秒自动刷新一次
+            } else {
+                console.debug('MPX DevTools API not ready, retrying...')
+                // 如果API还没准备好，1秒后重试
+                setTimeout(initDevTools, 1000)
+            }
+        }
+
+        // 立即尝试初始化
+        initDevTools()
+    },
+    beforeUnmount() {
+        // 清理定时器
+        if (this.timer) {
+            clearInterval(this.timer)
+            this.timer = null
+            console.debug('MPX DevTools timer cleared')
+        }
+        // 清理节流计时器
+        if (this._throttleTimer) {
+            clearTimeout(this._throttleTimer)
+            this._throttleTimer = null
+        }
+    },
+    computed: {
+        visibleNodesWithDisplayName() {
+            return this.visibleNodes.map(item => ({
+                ...item,
+                displayFileName: this.getDisplayFileName(item.fileSrc)
+            }))
+        }
+    },
+})
+</script>
+
+<style lang="stylus">
+.devtools-container-collapsed
+    width max-content
+    padding 0rpx !important
+    height auto !important
+    overflow scroll
+
+.devtools-container
+    padding 20rpx
+    background linear-gradient(135deg, #faf8ff 0%, #f7f4ff 100%)
+    transition all 0.3s ease
+
+.devtools-floating
+    position fixed
+    z-index 1000
+    box-shadow 0 8rpx 32rpx rgba(0, 0, 0, 0.2)
+    border-radius 20rpx
+    backdrop-filter blur(20rpx)
+    border 2rpx solid rgba(168, 181, 255, 0.3)
+
+.devtools-container-collapsed
+    max-width 400rpx
+
+.copy-btn
+    margin-right 8rpx
+
+.header
+    background linear-gradient(135deg, #a8b5ff 0%, #b19cd9 100%)
+    padding 30rpx
+    border-radius 16rpx
+    margin-bottom 24rpx
+    box-shadow 0 8rpx 32rpx rgba(168, 181, 255, 0.3)
+    color white
+    transition all 0.3s ease
+    position relative
+
+.header-collapsed
+    padding 20rpx 30rpx
+    margin-bottom 0rpx
+    box-shadow 0 4rpx 16rpx rgba(168, 181, 255, 0.2)
+
+.header-top
+    display flex
+    justify-content space-between
+    align-items center
+    margin-bottom 24rpx
+    transition margin-bottom 0.3s ease
+
+.header-collapsed .header-top
+    margin-bottom 0
+
+.devtools-main
+    overflow scroll
+    height 100%
+
+.title-section
+    flex 1
+    min-width 0
+    overflow hidden
+
+.title
+    font-size 36rpx
+    font-weight 600
+    color white
+    display block
+    margin-bottom 8rpx
+    letter-spacing 1rpx
+    transition all 0.3s ease
+    white-space nowrap
+    overflow hidden
+    text-overflow ellipsis
+
+.header-collapsed .title
+    font-size 28rpx
+    margin-bottom 0
+
+.subtitle
+    font-size 24rpx
+    color rgba(255, 255, 255, 0.8)
+    display block
+
+.status-section
+    display flex
+    flex-direction column
+    align-items flex-end
+    gap 12rpx
+
+.header-collapsed .status-section
+    flex-direction row
+    align-items center
+    gap 0
+
+.drag-indicator
+    position absolute
+    top 8rpx
+    left 50%
+    transform translateX(-50%)
+    display flex
+    align-items center
+    justify-content center
+    width 60rpx
+    height 12rpx
+    border-radius 6rpx
+    background rgba(255, 255, 255, 0.4)
+    cursor grab
+
+.drag-indicator:active
+    cursor grabbing
+
+.drag-icon
+    font-size 16rpx
+    color rgba(255, 255, 255, 0.8)
+    line-height 1
+    letter-spacing 2rpx
+
+.update-time
+    font-size 22rpx
+    color rgba(255, 255, 255, 0.9)
+    background rgba(255, 255, 255, 0.15)
+    padding 8rpx 12rpx
+    border-radius 20rpx
+    backdrop-filter blur(10rpx)
+
+.collapse-toggle-btn
+    display flex
+    align-items center
+    gap 8rpx
+    background rgba(255, 255, 255, 0.2)
+    border-radius 24rpx
+    padding 8rpx 16rpx
+    margin-left 16rpx
+    backdrop-filter blur(10rpx)
+    border 1rpx solid rgba(255, 255, 255, 0.3)
+    transition all 0.3s ease
+    cursor pointer
+
+.collapse-toggle-btn:active
+    transform scale(0.95)
+    background rgba(255, 255, 255, 0.3)
+
+.collapse-toggle-icon
+    font-size 24rpx
+    line-height 1
+    transition transform 0.3s ease
+
+.collapse-toggle-text
+    font-size 22rpx
+    color rgba(255, 255, 255, 0.95)
+    font-weight 500
+
+.refresh-btn
+    display flex
+    align-items center
+    gap 6rpx
+    background rgba(255, 255, 255, 0.2)
+    border none
+    border-radius 24rpx
+    padding 10rpx 16rpx
+    color white
+    font-size 24rpx
+    transition all 0.3s ease
+    backdrop-filter blur(10rpx)
+    border 1rpx solid rgba(255, 255, 255, 0.3)
+
+.refresh-btn::after
+    border none
+    background none
+
+.refresh-btn:active
+    transform scale(0.95)
+    background rgba(255, 255, 255, 0.3)
+
+.refresh-icon
+    font-size 28rpx
+    line-height 1
+
+.refresh-text
+    font-size 24rpx
+    font-weight 500
+
+.filter-container
+    background rgba(255, 255, 255, 0.15)
+    border-radius 12rpx
+    padding 16rpx
+    backdrop-filter blur(10rpx)
+    border 1rpx solid rgba(255, 255, 255, 0.2)
+
+.filter-wrapper-data
+    background rgba(255, 255, 255, 0.3) !important
+
+.search-mode-indicator
+    display flex
+    justify-content space-between
+    align-items center
+    margin-bottom 12rpx
+    padding 0 8rpx
+
+.mode-text
+    font-size 24rpx
+    color rgba(255, 255, 255, 0.9)
+    font-weight 500
+
+.mode-hint
+    font-size 20rpx
+    color rgba(255, 255, 255, 0.7)
+    font-style italic
+
+.filter-wrapper
+    display flex
+    align-items center
+    background rgba(255, 255, 255, 0.9)
+    border-radius 28rpx
+    padding 4rpx 8rpx 4rpx 16rpx
+    box-shadow 0 4rpx 16rpx rgba(0, 0, 0, 0.1)
+
+.filter-icon
+    font-size 28rpx
+    margin-right 12rpx
+    color #666
+
+.filter-input
+    flex 1
+    height 48rpx
+    padding 0 12rpx
+    font-size 26rpx
+    background-color transparent
+    border none
+    color #333
+    outline none
+
+.filter-input::placeholder
+    color #999
+
+.clear-btn
+    width 36rpx
+    height 36rpx
+    display flex
+    align-items center
+    justify-content center
+    margin-left 8rpx
+    background rgba(0, 0, 0, 0.1)
+    border-radius 50%
+    flex-shrink 0
+    transition all 0.3s ease
+
+.clear-btn:active
+    background rgba(0, 0, 0, 0.2)
+    transform scale(0.9)
+
+.clear-icon
+    font-size 20rpx
+    color #666
+    line-height 1
+    font-weight bold
+
+.tree-container
+    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+    border-radius 16rpx
+    padding 20rpx
+    box-shadow 0 4rpx 20rpx rgba(168, 181, 255, 0.15)
+    border 2rpx solid rgba(168, 181, 255, 0.2)
+    height 500rpx
+    overflow scroll
+
+.devtools-floating .tree-container
+    height 100%
+
+.empty-state
+    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+    border-radius 8rpx
+    padding 10rpx 5rpx
+    text-align center
+    border 2rpx dashed rgba(168, 181, 255, 0.4)
+    margin-top 10rpx
+
+.empty-text
+    font-size 20rpx
+    color #7c3aed
+    font-weight 400
+    display block
+    margin-bottom 2rpx
+
+.empty-hint
+    font-size 26rpx
+    color #a855f7
+    display block
+    opacity 0.8
+
+.tree-node
+    padding 12rpx 0
+    border-bottom 1rpx solid rgba(168, 181, 255, 0.15)
+    white-space nowrap
+    display inline-block
+    min-width 100%
+    width max-content
+
+.tree-node:last-child
+    border-bottom none
+
+.node-content
+    display inline-flex
+    align-items center
+    min-width 100%
+    width max-content
+
+.collapse-btn
+    width 40rpx
+    height 40rpx
+    display flex
+    align-items center
+    justify-content center
+    margin-right 10rpx
+    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
+    border 1rpx solid rgba(168, 181, 255, 0.3)
+    border-radius 50%
+    flex-shrink 0
+    transition all 0.3s ease
+
+.collapse-btn:active
+    transform scale(0.95)
+    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+
+.collapse-icon
+    font-size 24rpx
+    color #7c3aed
+    font-weight bold
+    line-height 1
+
+.info-btn
+    width 40rpx
+    height 40rpx
+    display flex
+    align-items center
+    justify-content center
+    margin-right 10rpx
+    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
+    border 1rpx solid rgba(168, 181, 255, 0.3)
+    border-radius 50%
+    flex-shrink 0
+    transition all 0.3s ease
+
+.info-btn:active
+    transform scale(0.95)
+    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+
+.info-icon
+    font-size 24rpx
+    color #7c3aed
+    font-weight bold
+    line-height 1
+
+.file-src-container
+    flex-shrink 0
+    white-space nowrap
+    flex 1
+    display flex
+    flex-direction column
+    align-items flex-start
+
+.node-text
+    font-size 26rpx
+    color #5b21b6
+    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
+    white-space nowrap
+    font-weight 500
+    text-shadow 0 1rpx 2rpx rgba(168, 181, 255, 0.1)
+    transition color 0.3s ease
+
+.node-text.highlighted
+    color #dc2626
+    font-weight 600
+    text-shadow 0 1rpx 2rpx rgba(220, 38, 38, 0.2)
+
+.matched-properties
+    display flex
+    flex-wrap wrap
+    margin-top 6rpx
+    gap 8rpx
+
+.matched-prop
+    font-size 20rpx
+    color #dc2626
+    background rgba(220, 38, 38, 0.1)
+    padding 2rpx 8rpx
+    border-radius 4rpx
+    border 1rpx solid rgba(220, 38, 38, 0.3)
+    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
+    font-weight 500
+
+// 弹窗样式
+.modal-overlay
+    position fixed
+    top 0
+    left 0
+    right 0
+    bottom 0
+    background-color rgba(0, 0, 0, 0.5)
+    z-index 99999
+    display flex
+    align-items center
+    justify-content center
+
+.info-modal
+    background-color #fff
+    border-radius 20rpx
+    width 90%
+    max-width 700rpx
+    max-height 80vh
+    overflow hidden
+    z-index 99999
+    box-shadow 0 10rpx 30rpx rgba(0, 0, 0, 0.3)
+
+.modal-header
+    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+    padding 30rpx
+    border-bottom 2rpx solid rgba(168, 181, 255, 0.2)
+    display flex
+    justify-content space-between
+    align-items center
+
+.modal-title
+    font-size 32rpx
+    font-weight 600
+    color #5b21b6
+
+.close-btn
+    width 50rpx
+    height 50rpx
+    display flex
+    align-items center
+    justify-content center
+    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
+    border 1rpx solid rgba(168, 181, 255, 0.3)
+    border-radius 50%
+    transition all 0.3s ease
+
+.close-btn:active
+    transform scale(0.95)
+    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+
+.close-icon
+    font-size 40rpx
+    color #7c3aed
+    line-height 1
+
+.modal-content
+    padding 30rpx
+    max-height 60vh
+    overflow-y auto
+
+.component-path
+    margin-bottom 30rpx
+    padding 20rpx
+    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+    border-radius 12rpx
+    border 1rpx solid rgba(168, 181, 255, 0.2)
+
+.path-label
+    font-size 24rpx
+    color #7c3aed
+    margin-right 10rpx
+    font-weight 500
+
+.path-text
+    font-size 24rpx
+    color #5b21b6
+    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
+    word-break break-all
+    font-weight 500
+
+.section
+    margin-bottom 30rpx
+
+.section-header
+    margin-bottom 20rpx
+    padding-bottom 10rpx
+    border-bottom 2rpx solid rgba(168, 181, 255, 0.2)
+
+.section-title
+    font-size 28rpx
+    font-weight 600
+    color #7c3aed
+
+.section-content
+    background linear-gradient(135deg, #fefcff 0%, #fdfbff 100%)
+    border-radius 12rpx
+    padding 24rpx
+    border 1rpx solid rgba(168, 181, 255, 0.2)
+
+.property-item
+    margin-bottom 16rpx
+    border-radius 6rpx
+    transition background-color 0.2s ease
+
+.property-item:last-child
+    margin-bottom 0
+
+.property-item:hover
+    background-color rgba(248, 249, 250, 0.5)
+
+.property-content
+    display flex
+    align-items flex-start
+    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
+    font-size 24rpx
+    margin-bottom 8rpx
+    padding 8rpx 0
+    position relative
+
+.property-content:not(.expandable) .property-value
+    background-color rgba(248, 249, 250, 0.3)
+    padding 4rpx 8rpx
+    border-radius 4rpx
+    border 1rpx solid rgba(230, 230, 230, 0.3)
+    box-shadow 0 1rpx 3rpx rgba(0, 0, 0, 0.03)
+    margin-top 0
+    margin-left 8rpx
+    flex 1
+
+.property-content.expandable
+    flex-direction column
+    align-items stretch
+
+.expandable-header
+    display flex
+    align-items center
+    cursor pointer
+    padding 5rpx 0
+    width 100%
+    min-height 40rpx
+
+.expand-icon
+    width 30rpx
+    height 30rpx
+    font-size 20rpx
+    color #666
+    margin-right 10rpx
+    text-align center
+    font-weight bold
+    transition color 0.3s ease
+    display flex
+    align-items center
+    justify-content center
+    background-color rgba(230, 230, 230, 0.3)
+    border-radius 4rpx
+    flex-shrink 0
+
+.expandable-header:hover .expand-icon
+    color #1890ff
+    background-color rgba(24, 144, 255, 0.1)
+
+.expandable-header:active .expand-icon
+    transform scale(0.95)
+    transition transform 0.1s ease
+
+.property-key
+    color #0366d6
+    margin-right 15rpx
+    font-weight 500
+    min-width 200rpx
+    flex-shrink 0
+    display inline-block
+    transition color 0.3s ease
+
+.property-key.matched-property-key
+    color #dc2626
+    font-weight 600
+    text-shadow 0 1rpx 2rpx rgba(220, 38, 38, 0.2)
+    background rgba(220, 38, 38, 0.1)
+    padding 4rpx 8rpx
+    border-radius 4rpx
+    border 1rpx solid rgba(220, 38, 38, 0.2)
+
+.property-value
+    color #333
+    word-break break-all
+    flex 1
+    white-space pre-wrap // 保持空格和换行符
+    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
+    line-height 1.4
+    max-height 400rpx
+    overflow-y auto
+    background-color rgba(248, 249, 250, 0.8)
+    padding 12rpx 16rpx
+    border-radius 8rpx
+    margin-top 8rpx
+    border 1rpx solid rgba(230, 230, 230, 0.6)
+    box-shadow 0 2rpx 8rpx rgba(0, 0, 0, 0.05), 0 1rpx 2rpx rgba(0, 0, 0, 0.1)
+    position relative
+
+.property-type
+    color #6f42c1
+    font-style italic
+    margin-left 10rpx
+
+.expanded-content
+    margin-left 40rpx
+    margin-top 10rpx
+    padding-left 20rpx
+    border-left 2rpx solid #e1e4e8
+
+.nested-property
+    display flex
+    align-items flex-start
+    margin-bottom 10rpx
+    font-size 22rpx
+
+.nested-property:last-child
+    margin-bottom 0
+
+.empty-text
+    color #666
+    font-style italic
+    text-align center
+    padding 20rpx 0
+
+// 拉伸控制器样式
+.resize-controls
+    position absolute
+    width 100%
+    height 100%
+    pointer-events none
+    top 0
+    left 0
+
+.resize-handle
+    position absolute
+    width 50rpx
+    height 50rpx
+    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
+    border 2rpx solid rgba(168, 181, 255, 0.5)
+    border-radius 50%
+    display flex
+    align-items center
+    justify-content center
+    cursor se-resize
+    pointer-events auto
+    transition all 0.3s ease
+    z-index 10
+
+.resize-handle:active
+    transform scale(1.1)
+    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+    border-color rgba(168, 181, 255, 0.8)
+
+.resize-handle-br
+    bottom -5rpx
+    right -5rpx
+
+.resize-handle-bl
+    bottom -5rpx
+    left -5rpx
+
+.resize-icon
+    font-size 20rpx
+    color #7c3aed
+    font-weight bold
+    line-height 1
+
+// 悬浮模式优化
+.devtools-floating
+    overflow hidden
+</style>
