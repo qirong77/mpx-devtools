@@ -1,0 +1,420 @@
+<template>
+  <scroll-view class="container" scroll-y="true" style="height: 100vh;">
+    <!-- 页面头部 -->
+    <view class="header card">
+      <view class="title">🧩 UI 组件展示</view>
+      <view class="subtitle">展示各种常用的小程序 UI 组件</view>
+    </view>
+
+    <!-- 按钮组件展示 -->
+    <view class="section">
+      <view class="section-title">按钮组件</view>
+      <demo-section title="基础按钮">
+        <view class="button-group">
+          <button class="btn-primary" bindtap="showToast" data-message="点击了主按钮">主按钮</button>
+          <button class="btn-secondary" bindtap="showToast" data-message="点击了次按钮">次按钮</button>
+          <button class="btn-success" bindtap="showToast" data-message="点击了成功按钮">成功</button>
+          <button class="btn-warning" bindtap="showToast" data-message="点击了警告按钮">警告</button>
+          <button class="btn-danger" bindtap="showToast" data-message="点击了危险按钮">危险</button>
+        </view>
+      </demo-section>
+
+      <demo-section title="按钮尺寸">
+        <view class="button-group">
+          <button class="btn-primary btn-large">大按钮</button>
+          <button class="btn-primary btn-medium">中按钮</button>
+          <button class="btn-primary btn-small">小按钮</button>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 表单组件展示 -->
+    <view class="section">
+      <view class="section-title">表单组件</view>
+      <demo-section title="输入框">
+        <view class="form-group">
+          <input class="input-field" placeholder="请输入用户名" value="{{formData.username}}" bindinput="onUsernameInput" />
+          <input class="input-field" type="number" placeholder="请输入年龄" value="{{formData.age}}" bindinput="onAgeInput" />
+          <textarea class="textarea-field" placeholder="请输入描述..." value="{{formData.description}}" bindinput="onDescriptionInput"></textarea>
+        </view>
+      </demo-section>
+
+      <demo-section title="选择器">
+        <view class="picker-group">
+          <picker mode="selector" range="{{cities}}" bindchange="onCityChange">
+            <view class="picker-item">
+              选择城市：{{cities[cityIndex] || '请选择'}}
+            </view>
+          </picker>
+          <picker mode="date" bindchange="onDateChange">
+            <view class="picker-item">
+              选择日期：{{selectedDate || '请选择'}}
+            </view>
+          </picker>
+        </view>
+      </demo-section>
+
+      <demo-section title="开关和滑块">
+        <view class="control-group">
+          <view class="control-item">
+            <text>启用通知</text>
+            <switch checked="{{switchValue}}" bindchange="onSwitchChange" />
+          </view>
+          <view class="control-item">
+            <text>音量控制：{{sliderValue}}%</text>
+            <slider value="{{sliderValue}}" min="0" max="100" bindchange="onSliderChange" />
+          </view>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 列表组件展示 -->
+    <view class="section">
+      <view class="section-title">列表组件</view>
+      <demo-section title="基础列表">
+        <list-component items="{{listItems}}"></list-component>
+      </demo-section>
+    </view>
+
+    <!-- 轮播图展示 -->
+    <view class="section">
+      <view class="section-title">轮播图组件</view>
+      <demo-section title="图片轮播">
+        <swiper class="swiper-container" indicator-dots="true" autoplay="true" interval="{{ 3000 }}" duration="{{ 500 }}">
+          <swiper-item wx:for="{{banners}}" wx:key="id">
+            <view class="swiper-item" style="background: {{item.color}}">
+              <view class="banner-content">
+                <view class="banner-title">{{item.title}}</view>
+                <view class="banner-desc">{{item.description}}</view>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </demo-section>
+    </view>
+
+    <!-- 弹窗展示 -->
+    <view class="section">
+      <view class="section-title">弹窗组件</view>
+      <demo-section title="系统弹窗">
+        <view class="button-group">
+          <button class="btn-primary" bindtap="showModal">显示对话框</button>
+          <button class="btn-secondary" bindtap="showActionSheet">显示操作菜单</button>
+          <button class="btn-success" bindtap="showLoading">显示加载中</button>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 当前表单数据展示 -->
+    <view class="section">
+      <demo-section title="当前数据">
+        <view class="data-display card">
+          <view class="data-item">
+            <text class="data-label">用户名：</text>
+            <text class="data-value">{{formData.username || '未填写'}}</text>
+          </view>
+          <view class="data-item">
+            <text class="data-label">年龄：</text>
+            <text class="data-value">{{formData.age || '未填写'}}</text>
+          </view>
+          <view class="data-item">
+            <text class="data-label">城市：</text>
+            <text class="data-value">{{cities[cityIndex] || '未选择'}}</text>
+          </view>
+          <view class="data-item">
+            <text class="data-label">日期：</text>
+            <text class="data-value">{{selectedDate || '未选择'}}</text>
+          </view>
+          <view class="data-item">
+            <text class="data-label">通知：</text>
+            <text class="data-value">{{switchValue ? '开启' : '关闭'}}</text>
+          </view>
+          <view class="data-item">
+            <text class="data-label">音量：</text>
+            <text class="data-value">{{sliderValue}}%</text>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+import { createPage } from '@mpxjs/core'
+import mpx from '@mpxjs/core'
+
+createPage({
+  data: {
+    formData: {
+      username: '',
+      age: '',
+      description: ''
+    },
+    cities: ['北京', '上海', '广州', '深圳', '杭州', '成都'],
+    cityIndex: 0,
+    selectedDate: '',
+    switchValue: true,
+    sliderValue: 50,
+    listItems: [
+      { id: 1, title: '列表项目 1', subtitle: '这是第一个列表项目的描述', avatar: '👤' },
+      { id: 2, title: '列表项目 2', subtitle: '这是第二个列表项目的描述', avatar: '🏠' },
+      { id: 3, title: '列表项目 3', subtitle: '这是第三个列表项目的描述', avatar: '📱' },
+      { id: 4, title: '列表项目 4', subtitle: '这是第四个列表项目的描述', avatar: '💼' }
+    ],
+    banners: [
+      { id: 1, title: '轮播图 1', description: '这是第一张轮播图', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+      { id: 2, title: '轮播图 2', description: '这是第二张轮播图', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+      { id: 3, title: '轮播图 3', description: '这是第三张轮播图', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }
+    ]
+  },
+
+  methods: {
+    showToast(e) {
+      const message = e.currentTarget.dataset.message || '按钮点击'
+      mpx.showToast({
+        title: message,
+        icon: 'success'
+      })
+    },
+
+    onUsernameInput(e) {
+      this.formData.username = e.detail.value
+    },
+
+    onAgeInput(e) {
+      this.formData.age = e.detail.value
+    },
+
+    onDescriptionInput(e) {
+      this.formData.description = e.detail.value
+    },
+
+    onCityChange(e) {
+      this.cityIndex = e.detail.value
+    },
+
+    onDateChange(e) {
+      this.selectedDate = e.detail.value
+    },
+
+    onSwitchChange(e) {
+      this.switchValue = e.detail.value
+    },
+
+    onSliderChange(e) {
+      this.sliderValue = e.detail.value
+    },
+
+    showModal() {
+      mpx.showModal({
+        title: '提示',
+        content: '这是一个模态对话框',
+        success: (res) => {
+          if (res.confirm) {
+            mpx.showToast({ title: '点击了确定', icon: 'success' })
+          } else {
+            mpx.showToast({ title: '点击了取消', icon: 'none' })
+          }
+        }
+      })
+    },
+
+    showActionSheet() {
+      mpx.showActionSheet({
+        itemList: ['选项A', '选项B', '选项C'],
+        success: (res) => {
+          mpx.showToast({
+            title: `选择了选项${res.tapIndex + 1}`,
+            icon: 'success'
+          })
+        }
+      })
+    },
+
+    showLoading() {
+      mpx.showLoading({
+        title: '加载中...'
+      })
+      setTimeout(() => {
+        mpx.hideLoading()
+        mpx.showToast({
+          title: '加载完成',
+          icon: 'success'
+        })
+      }, 2000)
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.container
+  padding 0 20rpx 40rpx
+  
+.header
+  text-align center
+  background linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+  color white
+  margin-bottom 30rpx
+  
+  .title
+    color white
+    font-size 36rpx
+    font-weight 600
+    
+  .subtitle
+    color rgba(255, 255, 255, 0.9)
+    font-size 26rpx
+
+.section
+  margin-bottom 40rpx
+  
+.section-title
+  font-size 32rpx
+  font-weight 600
+  color #333
+  margin-bottom 20rpx
+  padding-left 20rpx
+  border-left 6rpx solid #667eea
+
+.button-group
+  display flex
+  flex-wrap wrap
+  gap 15rpx
+  
+  button
+    flex 1
+    min-width 120rpx
+    
+.btn-success
+  background #28a745
+  color white
+  border none
+  border-radius 8rpx
+  padding 20rpx 30rpx
+  font-size 28rpx
+  
+.btn-warning
+  background #ffc107
+  color #333
+  border none
+  border-radius 8rpx
+  padding 20rpx 30rpx
+  font-size 28rpx
+  
+.btn-danger
+  background #dc3545
+  color white
+  border none
+  border-radius 8rpx
+  padding 20rpx 30rpx
+  font-size 28rpx
+  
+.btn-large
+  padding 25rpx 50rpx
+  font-size 32rpx
+  
+.btn-medium
+  padding 20rpx 40rpx
+  font-size 28rpx
+  
+.btn-small
+  padding 15rpx 30rpx
+  font-size 24rpx
+
+.form-group
+  .input-field, .textarea-field
+    width 100%
+    padding 25rpx 30rpx
+    border 2rpx solid #e9ecef
+    border-radius 8rpx
+    font-size 28rpx
+    margin-bottom 20rpx
+    box-sizing border-box
+    
+  .textarea-field
+    min-height 120rpx
+
+.picker-group
+  .picker-item
+    padding 25rpx 30rpx
+    border 2rpx solid #e9ecef
+    border-radius 8rpx
+    font-size 28rpx
+    margin-bottom 20rpx
+    background white
+    
+.control-group
+  .control-item
+    display flex
+    justify-content space-between
+    align-items center
+    padding 25rpx 0
+    border-bottom 1rpx solid #f0f0f0
+    
+    &:last-child
+      border-bottom none
+      
+    text
+      font-size 28rpx
+      color #333
+      
+    slider
+      flex 1
+      margin-left 30rpx
+
+.swiper-container
+  height 300rpx
+  border-radius 12rpx
+  overflow hidden
+  
+  .swiper-item
+    height 100%
+    display flex
+    align-items center
+    justify-content center
+    
+    .banner-content
+      text-align center
+      color white
+      
+      .banner-title
+        font-size 36rpx
+        font-weight 600
+        margin-bottom 10rpx
+        
+      .banner-desc
+        font-size 26rpx
+        opacity 0.9
+
+.data-display
+  background #f8f9fa
+  
+  .data-item
+    display flex
+    justify-content space-between
+    padding 15rpx 0
+    border-bottom 1rpx solid #e9ecef
+    
+    &:last-child
+      border-bottom none
+      
+    .data-label
+      color #666
+      font-size 26rpx
+      
+    .data-value
+      color #333
+      font-size 26rpx
+      font-weight 500
+</style>
+
+<script type="application/json">
+{
+  "usingComponents": {
+    "demo-section": "../components/demo-section",
+    "list-component": "../components/list-component"
+  },
+  "navigationBarTitleText": "组件展示"
+}
+</script>

@@ -1,0 +1,563 @@
+<template>
+  <scroll-view class="container" scroll-y="true" style="height: 100vh;">
+    <!-- 页面头部 -->
+    <view class="header card">
+      <view class="title">🔧 API 演示</view>
+      <view class="subtitle">展示小程序常用 API 的使用方法</view>
+    </view>
+
+    <!-- 网络请求 API -->
+    <view class="section">
+      <view class="section-title">网络请求</view>
+      <demo-section title="HTTP 请求">
+        <view class="api-demo">
+          <button class="btn-primary" bindtap="testHttpRequest" loading="{{httpLoading}}">
+            {{httpLoading ? '请求中...' : '发起 HTTP 请求'}}
+          </button>
+          <view class="result-box" wx:if="{{httpResult}}">
+            <view class="result-title">请求结果：</view>
+            <text class="result-content">{{httpResult}}</text>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 本地存储 API -->
+    <view class="section">
+      <view class="section-title">本地存储</view>
+      <demo-section title="数据存储">
+        <view class="api-demo">
+          <view class="input-group">
+            <input class="input-field" placeholder="请输入要存储的数据" value="{{storageData}}" bindinput="onStorageInput" />
+          </view>
+          <view class="button-group">
+            <button class="btn-primary" bindtap="saveToStorage">保存数据</button>
+            <button class="btn-secondary" bindtap="getFromStorage">读取数据</button>
+            <button class="btn-danger" bindtap="clearStorage">清除数据</button>
+          </view>
+          <view class="result-box" wx:if="{{storageResult}}">
+            <view class="result-title">存储结果：</view>
+            <text class="result-content">{{storageResult}}</text>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 设备信息 API -->
+    <view class="section">
+      <view class="section-title">设备信息</view>
+      <demo-section title="系统信息">
+        <view class="api-demo">
+          <button class="btn-primary" bindtap="getSystemInfo">获取系统信息</button>
+          <view class="info-list" wx:if="{{systemInfo}}">
+            <view class="info-item" wx:for="{{systemInfoList}}" wx:key="key">
+              <text class="info-label">{{item.label}}：</text>
+              <text class="info-value">{{item.value}}</text>
+            </view>
+          </view>
+        </view>
+      </demo-section>
+
+      <demo-section title="位置信息">
+        <view class="api-demo">
+          <button class="btn-primary" bindtap="getLocation" loading="{{locationLoading}}">
+            {{locationLoading ? '定位中...' : '获取位置信息'}}
+          </button>
+          <view class="info-list" wx:if="{{locationInfo}}">
+            <view class="info-item">
+              <text class="info-label">纬度：</text>
+              <text class="info-value">{{locationInfo.latitude}}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">经度：</text>
+              <text class="info-value">{{locationInfo.longitude}}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">精度：</text>
+              <text class="info-value">{{locationInfo.accuracy}}米</text>
+            </view>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 媒体 API -->
+    <view class="section">
+      <view class="section-title">媒体功能</view>
+      <demo-section title="图片选择">
+        <view class="api-demo">
+          <button class="btn-primary" bindtap="chooseImage">选择图片</button>
+          <view class="image-preview" wx:if="{{selectedImages.length > 0}}">
+            <image 
+              class="preview-image" 
+              wx:for="{{selectedImages}}" 
+              wx:key="*this"
+              src="{{item}}" 
+              mode="aspectFit"
+              bindtap="previewImage"
+              data-src="{{item}}">
+            </image>
+          </view>
+        </view>
+      </demo-section>
+
+      <demo-section title="扫码功能">
+        <view class="api-demo">
+          <button class="btn-primary" bindtap="scanCode">扫一扫</button>
+          <view class="result-box" wx:if="{{scanResult}}">
+            <view class="result-title">扫码结果：</view>
+            <text class="result-content">{{scanResult}}</text>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 界面反馈 API -->
+    <view class="section">
+      <view class="section-title">界面反馈</view>
+      <demo-section title="消息提示">
+        <view class="api-demo">
+          <view class="button-group">
+            <button class="btn-success" bindtap="showSuccessToast">成功提示</button>
+            <button class="btn-warning" bindtap="showErrorToast">错误提示</button>
+            <button class="btn-secondary" bindtap="showLoadingToast">加载提示</button>
+          </view>
+        </view>
+      </demo-section>
+
+      <demo-section title="震动反馈">
+        <view class="api-demo">
+          <view class="button-group">
+            <button class="btn-primary" bindtap="vibrateShort">短震动</button>
+            <button class="btn-primary" bindtap="vibrateLong">长震动</button>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+
+    <!-- 页面跳转 API -->
+    <view class="section">
+      <view class="section-title">页面跳转</view>
+      <demo-section title="导航功能">
+        <view class="api-demo">
+          <view class="button-group">
+            <button class="btn-primary" bindtap="navigateToHome">跳转到首页</button>
+            <button class="btn-secondary" bindtap="navigateBack">返回上页</button>
+            <button class="btn-success" bindtap="redirectToComponents">重定向到组件页</button>
+          </view>
+        </view>
+      </demo-section>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+import { createPage } from '@mpxjs/core'
+import mpx from '@mpxjs/core'
+
+createPage({
+  data: {
+    // 网络请求
+    httpLoading: false,
+    httpResult: '',
+    
+    // 本地存储
+    storageData: '',
+    storageResult: '',
+    
+    // 系统信息
+    systemInfo: null,
+    systemInfoList: [],
+    
+    // 位置信息
+    locationLoading: false,
+    locationInfo: null,
+    
+    // 图片
+    selectedImages: [],
+    
+    // 扫码结果
+    scanResult: ''
+  },
+
+  methods: {
+    // 网络请求
+    async testHttpRequest() {
+      this.httpLoading = true
+      this.httpResult = ''
+      
+      try {
+        const result = await mpx.request({
+          url: 'https://api.github.com/repos/didi/mpx',
+          method: 'GET'
+        })
+        
+        this.httpResult = `请求成功！仓库名称：${result.data.name}，Star数：${result.data.stargazers_count}`
+      } catch (error) {
+        this.httpResult = `请求失败：${error.message || '网络错误'}`
+      } finally {
+        this.httpLoading = false
+      }
+    },
+
+    // 本地存储
+    onStorageInput(e) {
+      this.storageData = e.detail.value
+    },
+
+    saveToStorage() {
+      if (!this.storageData.trim()) {
+        mpx.showToast({
+          title: '请输入要存储的数据',
+          icon: 'none'
+        })
+        return
+      }
+      
+      try {
+        mpx.setStorageSync('demo_data', this.storageData)
+        this.storageResult = `数据保存成功：${this.storageData}`
+        mpx.showToast({
+          title: '保存成功',
+          icon: 'success'
+        })
+      } catch (error) {
+        this.storageResult = `保存失败：${error.message}`
+      }
+    },
+
+    getFromStorage() {
+      try {
+        const data = mpx.getStorageSync('demo_data')
+        if (data) {
+          this.storageResult = `读取到的数据：${data}`
+        } else {
+          this.storageResult = '暂无存储数据'
+        }
+      } catch (error) {
+        this.storageResult = `读取失败：${error.message}`
+      }
+    },
+
+    clearStorage() {
+      try {
+        mpx.removeStorageSync('demo_data')
+        this.storageResult = '数据已清除'
+        this.storageData = ''
+        mpx.showToast({
+          title: '清除成功',
+          icon: 'success'
+        })
+      } catch (error) {
+        this.storageResult = `清除失败：${error.message}`
+      }
+    },
+
+    // 系统信息
+    getSystemInfo() {
+      mpx.getSystemInfo({
+        success: (res) => {
+          this.systemInfo = res
+          this.systemInfoList = [
+            { key: 'platform', label: '平台', value: res.platform },
+            { key: 'system', label: '系统', value: res.system },
+            { key: 'version', label: '版本', value: res.version },
+            { key: 'model', label: '设备型号', value: res.model },
+            { key: 'pixelRatio', label: '像素比', value: res.pixelRatio },
+            { key: 'screenWidth', label: '屏幕宽度', value: `${res.screenWidth}px` },
+            { key: 'screenHeight', label: '屏幕高度', value: `${res.screenHeight}px` }
+          ]
+        },
+        fail: (error) => {
+          mpx.showToast({
+            title: `获取失败：${error.message}`,
+            icon: 'none'
+          })
+        }
+      })
+    },
+
+    // 位置信息
+    getLocation() {
+      this.locationLoading = true
+      this.locationInfo = null
+      
+      mpx.getLocation({
+        type: 'gcj02',
+        success: (res) => {
+          this.locationInfo = {
+            latitude: res.latitude.toFixed(6),
+            longitude: res.longitude.toFixed(6),
+            accuracy: res.accuracy
+          }
+        },
+        fail: (error) => {
+          mpx.showToast({
+            title: `定位失败：${error.errMsg}`,
+            icon: 'none'
+          })
+        },
+        complete: () => {
+          this.locationLoading = false
+        }
+      })
+    },
+
+    // 图片选择
+    chooseImage() {
+      mpx.chooseImage({
+        count: 3,
+        sizeType: ['original', 'compressed'],
+        sourceType: ['album', 'camera'],
+        success: (res) => {
+          this.selectedImages = res.tempFilePaths
+          mpx.showToast({
+            title: `选择了 ${res.tempFilePaths.length} 张图片`,
+            icon: 'success'
+          })
+        },
+        fail: (error) => {
+          mpx.showToast({
+            title: `选择失败：${error.errMsg}`,
+            icon: 'none'
+          })
+        }
+      })
+    },
+
+    previewImage(e) {
+      const src = e.currentTarget.dataset.src
+      mpx.previewImage({
+        current: src,
+        urls: this.selectedImages
+      })
+    },
+
+    // 扫码
+    scanCode() {
+      mpx.scanCode({
+        success: (res) => {
+          this.scanResult = `扫码类型：${res.scanType}，结果：${res.result}`
+        },
+        fail: (error) => {
+          this.scanResult = `扫码失败：${error.errMsg}`
+        }
+      })
+    },
+
+    // 消息提示
+    showSuccessToast() {
+      mpx.showToast({
+        title: '操作成功',
+        icon: 'success',
+        duration: 2000
+      })
+    },
+
+    showErrorToast() {
+      mpx.showToast({
+        title: '操作失败，请重试',
+        icon: 'error',
+        duration: 2000
+      })
+    },
+
+    showLoadingToast() {
+      mpx.showLoading({
+        title: '加载中...'
+      })
+      setTimeout(() => {
+        mpx.hideLoading()
+        mpx.showToast({
+          title: '加载完成',
+          icon: 'success'
+        })
+      }, 2000)
+    },
+
+    // 震动反馈
+    vibrateShort() {
+      mpx.vibrateShort({
+        success: () => {
+          mpx.showToast({
+            title: '短震动',
+            icon: 'none'
+          })
+        }
+      })
+    },
+
+    vibrateLong() {
+      mpx.vibrateLong({
+        success: () => {
+          mpx.showToast({
+            title: '长震动',
+            icon: 'none'
+          })
+        }
+      })
+    },
+
+    // 页面跳转
+    navigateToHome() {
+      mpx.switchTab({
+        url: '/pages/home'
+      })
+    },
+
+    navigateBack() {
+      mpx.navigateBack()
+    },
+
+    redirectToComponents() {
+      mpx.redirectTo({
+        url: '/pages/components'
+      })
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.container
+  padding 0 20rpx 40rpx
+  
+.header
+  text-align center
+  background linear-gradient(135deg, #f093fb 0%, #f5576c 100%)
+  color white
+  margin-bottom 30rpx
+  
+  .title
+    color white
+    font-size 36rpx
+    font-weight 600
+    
+  .subtitle
+    color rgba(255, 255, 255, 0.9)
+    font-size 26rpx
+
+.section
+  margin-bottom 40rpx
+  
+.section-title
+  font-size 32rpx
+  font-weight 600
+  color #333
+  margin-bottom 20rpx
+  padding-left 20rpx
+  border-left 6rpx solid #f093fb
+
+.api-demo
+  .input-group
+    margin-bottom 20rpx
+    
+    .input-field
+      width 100%
+      padding 25rpx 30rpx
+      border 2rpx solid #e9ecef
+      border-radius 8rpx
+      font-size 28rpx
+      box-sizing border-box
+
+  .button-group
+    display flex
+    flex-wrap wrap
+    gap 15rpx
+    margin-bottom 20rpx
+    
+    button
+      flex 1
+      min-width 120rpx
+
+  .result-box
+    background #f8f9fa
+    border-radius 8rpx
+    padding 25rpx
+    margin-top 20rpx
+    
+    .result-title
+      font-size 26rpx
+      font-weight 500
+      color #333
+      margin-bottom 15rpx
+      
+    .result-content
+      font-size 24rpx
+      color #666
+      line-height 1.6
+      word-break break-all
+
+  .info-list
+    background #f8f9fa
+    border-radius 8rpx
+    padding 25rpx
+    margin-top 20rpx
+    
+    .info-item
+      display flex
+      justify-content space-between
+      padding 15rpx 0
+      border-bottom 1rpx solid #e9ecef
+      
+      &:last-child
+        border-bottom none
+        
+      .info-label
+        color #666
+        font-size 26rpx
+        
+      .info-value
+        color #333
+        font-size 26rpx
+        font-weight 500
+        flex 1
+        text-align right
+        margin-left 20rpx
+        word-break break-all
+
+  .image-preview
+    display flex
+    flex-wrap wrap
+    gap 15rpx
+    margin-top 20rpx
+    
+    .preview-image
+      width 150rpx
+      height 150rpx
+      border-radius 8rpx
+      border 2rpx solid #e9ecef
+
+.btn-success
+  background #28a745
+  color white
+  border none
+  border-radius 8rpx
+  padding 20rpx 30rpx
+  font-size 28rpx
+  
+.btn-warning
+  background #ffc107
+  color #333
+  border none
+  border-radius 8rpx
+  padding 20rpx 30rpx
+  font-size 28rpx
+  
+.btn-danger
+  background #dc3545
+  color white
+  border none
+  border-radius 8rpx
+  padding 20rpx 30rpx
+  font-size 28rpx
+</style>
+
+<script type="application/json">
+{
+  "usingComponents": {
+    "demo-section": "../components/demo-section"
+  },
+  "navigationBarTitleText": "API 演示"
+}
+</script>

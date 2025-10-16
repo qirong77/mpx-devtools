@@ -1,0 +1,682 @@
+<template>
+  <scroll-view class="container" scroll-y="true" style="height: 100vh;">
+    <!-- 项目介绍 -->
+    <view class="header card">
+      <view class="app-logo">🚀</view>
+      <view class="app-name">MPX Demo App</view>
+      <view class="app-version">Version {{appInfo.version}}</view>
+      <view class="app-desc">跨平台小程序开发框架示例项目</view>
+    </view>
+
+    <!-- 项目信息 -->
+    <view class="section">
+      <view class="section-title">📋 项目信息</view>
+      <info-card 
+        wx:for="{{projectInfo}}" 
+        wx:key="title"
+        title="{{item.title}}"
+        content="{{item.content}}"
+        icon="{{item.icon}}">
+      </info-card>
+    </view>
+
+    <!-- 环境检测 -->
+    <view class="section">
+      <view class="section-title">🔍 环境检测</view>
+      <view class="card">
+        <button class="btn-primary full-width" bindtap="detectEnvironment" loading="{{detecting}}">
+          {{detecting ? '检测中...' : '开始环境检测'}}
+        </button>
+        
+        <view class="env-results" wx:if="{{envResults.length > 0}}">
+          <view class="env-item" wx:for="{{envResults}}" wx:key="name">
+            <view class="env-name">
+              <text class="env-icon">{{item.icon}}</text>
+              <text class="env-text">{{item.name}}</text>
+            </view>
+            <view class="env-status {{item.status}}">{{item.value}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 平台差异对比 -->
+    <view class="section">
+      <view class="section-title">⚖️ 平台差异对比</view>
+      <view class="platform-comparison">
+        <platform-card 
+          wx:for="{{platforms}}" 
+          wx:key="name"
+          name="{{item.name}}"
+          logo="{{item.logo}}"
+          features="{{item.features}}"
+          status="{{item.status}}"
+          current="{{item.current}}">
+        </platform-card>
+      </view>
+    </view>
+
+    <!-- 技术栈 -->
+    <view class="section">
+      <view class="section-title">🛠️ 技术栈</view>
+      <view class="tech-stack">
+        <view class="tech-category" wx:for="{{techStack}}" wx:key="category">
+          <view class="tech-title">{{item.category}}</view>
+          <view class="tech-list">
+            <view class="tech-item" wx:for="{{item.technologies}}" wx:for-item="tech" wx:key="name">
+              <text class="tech-name">{{tech.name}}</text>
+              <text class="tech-version">{{tech.version}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 功能特性 -->
+    <view class="section">
+      <view class="section-title">✨ 功能特性</view>
+      <view class="features-grid">
+        <view class="feature-item card" wx:for="{{features}}" wx:key="title">
+          <view class="feature-icon">{{item.icon}}</view>
+          <view class="feature-title">{{item.title}}</view>
+          <view class="feature-desc">{{item.description}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 开发者信息 -->
+    <view class="section">
+      <view class="section-title">👨‍💻 开发者信息</view>
+      <view class="card developer-info">
+        <view class="developer-item">
+          <text class="label">项目作者：</text>
+          <text class="value">MPX Team</text>
+        </view>
+        <view class="developer-item">
+          <text class="label">GitHub：</text>
+          <text class="value link" bindtap="openGitHub">github.com/didi/mpx</text>
+        </view>
+        <view class="developer-item">
+          <text class="label">文档地址：</text>
+          <text class="value link" bindtap="openDocs">mpxjs.cn</text>
+        </view>
+        <view class="developer-item">
+          <text class="label">构建时间：</text>
+          <text class="value">{{buildTime}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 调试信息 -->
+    <view class="section">
+      <view class="section-title">🐛 调试信息</view>
+      <view class="card debug-info">
+        <button class="btn-secondary full-width" bindtap="toggleDebugInfo">
+          {{showDebugInfo ? '隐藏' : '显示'}}调试信息
+        </button>
+        
+        <view class="debug-content" wx:if="{{showDebugInfo}}">
+          <view class="debug-item" wx:for="{{debugInfo}}" wx:key="key">
+            <text class="debug-key">{{item.key}}：</text>
+            <text class="debug-value">{{item.value}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部信息 -->
+    <view class="footer">
+      <view class="copyright">© 2024 MPX Demo App</view>
+      <view class="powered-by">Powered by MPX Framework</view>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+import { createPage } from '@mpxjs/core'
+import mpx from '@mpxjs/core'
+
+createPage({
+  data: {
+    appInfo: {
+      version: '1.0.0'
+    },
+    detecting: false,
+    showDebugInfo: false,
+    buildTime: '',
+    
+    projectInfo: [
+      {
+        title: 'MPX 框架',
+        content: '增强型跨平台小程序框架，深度性能优化，支持跨平台',
+        icon: '🎯'
+      },
+      {
+        title: '跨平台支持',
+        content: '微信、支付宝、百度、字节跳动、QQ小程序及H5',
+        icon: '🌐'
+      },
+      {
+        title: '开发体验',
+        content: 'Vue.js语法支持，完善的TypeScript支持',
+        icon: '💡'
+      },
+      {
+        title: '性能优化',
+        content: '编译时优化、运行时优化、包体积优化',
+        icon: '⚡'
+      }
+    ],
+
+    platforms: [
+      {
+        name: '微信小程序',
+        logo: '🟢',
+        features: ['原生性能', '丰富API', '最大用户群体'],
+        status: 'supported',
+        current: true
+      },
+      {
+        name: '支付宝小程序',
+        logo: '🔵',
+        features: ['金融场景', '企业服务', 'IoT支持'],
+        status: 'supported',
+        current: false
+      },
+      {
+        name: '百度小程序',
+        logo: '🔴',
+        features: ['AI能力', '搜索入口', '智能推荐'],
+        status: 'supported',
+        current: false
+      },
+      {
+        name: '字节跳动',
+        logo: '⚫',
+        features: ['年轻用户', '创新功能', '短视频生态'],
+        status: 'supported',
+        current: false
+      }
+    ],
+
+    techStack: [
+      {
+        category: '核心框架',
+        technologies: [
+          { name: '@mpxjs/core', version: '2.10.0' },
+          { name: 'Vue.js', version: '2.7.0' },
+          { name: '@mpxjs/api-proxy', version: '2.10.0' }
+        ]
+      },
+      {
+        category: '构建工具',
+        technologies: [
+          { name: '@mpxjs/webpack-plugin', version: '2.10.0' },
+          { name: 'Webpack', version: '5.43.0' },
+          { name: 'Babel', version: '7.10.4' }
+        ]
+      },
+      {
+        category: '开发工具',
+        technologies: [
+          { name: '@vue/cli-service', version: '5.0.0' },
+          { name: 'Stylus', version: '0.55.0' },
+          { name: 'PostCSS', version: '8.2.6' }
+        ]
+      }
+    ],
+
+    features: [
+      {
+        title: '跨平台编译',
+        description: '一套代码编译到多个小程序平台',
+        icon: '🔄'
+      },
+      {
+        title: '性能优化',
+        description: '编译时和运行时的深度优化',
+        icon: '🚀'
+      },
+      {
+        title: 'TypeScript',
+        description: '完整的TypeScript开发支持',
+        icon: '📝'
+      },
+      {
+        title: '组件化',
+        description: '支持Vue风格的组件化开发',
+        icon: '🧩'
+      },
+      {
+        title: '状态管理',
+        description: '内置Pinia状态管理支持',
+        icon: '📦'
+      },
+      {
+        title: '工具链',
+        description: '完善的开发和调试工具链',
+        icon: '🛠️'
+      }
+    ],
+
+    envResults: [],
+    debugInfo: []
+  },
+
+  onLoad() {
+    this.initializePage()
+  },
+
+  methods: {
+    initializePage() {
+      // 设置构建时间
+      this.buildTime = new Date().toLocaleString('zh-CN')
+      
+      // 检测当前平台
+      this.detectCurrentPlatform()
+    },
+
+    detectCurrentPlatform() {
+      mpx.getSystemInfo({
+        success: (res) => {
+          // 更新平台信息
+          this.platforms = this.platforms.map(platform => ({
+            ...platform,
+            current: platform.name.includes('微信') && res.platform
+          }))
+        }
+      })
+    },
+
+    async detectEnvironment() {
+      this.detecting = true
+      this.envResults = []
+
+      try {
+        // 模拟检测过程
+        await this.sleep(500)
+
+        // 系统信息检测
+        const systemInfo = await this.getSystemInfoAsync()
+        this.envResults.push({
+          name: '系统平台',
+          value: systemInfo.platform || '未知',
+          status: 'success',
+          icon: '📱'
+        })
+
+        await this.sleep(300)
+
+        // 网络状态检测
+        const networkInfo = await this.getNetworkInfoAsync()
+        this.envResults.push({
+          name: '网络状态',
+          value: networkInfo.networkType || '未知',
+          status: networkInfo.networkType !== 'none' ? 'success' : 'error',
+          icon: '🌐'
+        })
+
+        await this.sleep(300)
+
+        // 存储功能检测
+        const storageSupported = this.testStorageSupport()
+        this.envResults.push({
+          name: '本地存储',
+          value: storageSupported ? '支持' : '不支持',
+          status: storageSupported ? 'success' : 'error',
+          icon: '💾'
+        })
+
+        await this.sleep(300)
+
+        // API 支持检测
+        const apiSupport = this.testAPISupport()
+        this.envResults.push({
+          name: 'API 支持',
+          value: `${apiSupport.supported}/${apiSupport.total}`,
+          status: apiSupport.supported > apiSupport.total * 0.8 ? 'success' : 'warning',
+          icon: '🔧'
+        })
+
+        mpx.showToast({
+          title: '环境检测完成',
+          icon: 'success'
+        })
+
+      } catch (error) {
+        mpx.showToast({
+          title: '检测失败',
+          icon: 'error'
+        })
+      } finally {
+        this.detecting = false
+      }
+    },
+
+    toggleDebugInfo() {
+      this.showDebugInfo = !this.showDebugInfo
+      
+      if (this.showDebugInfo && this.debugInfo.length === 0) {
+        this.generateDebugInfo()
+      }
+    },
+
+    generateDebugInfo() {
+      mpx.getSystemInfo({
+        success: (res) => {
+          this.debugInfo = [
+            { key: 'appId', value: res.appId || 'N/A' },
+            { key: 'platform', value: res.platform },
+            { key: 'system', value: res.system },
+            { key: 'version', value: res.version },
+            { key: 'SDKVersion', value: res.SDKVersion },
+            { key: 'screenWidth', value: `${res.screenWidth}px` },
+            { key: 'screenHeight', value: `${res.screenHeight}px` },
+            { key: 'windowWidth', value: `${res.windowWidth}px` },
+            { key: 'windowHeight', value: `${res.windowHeight}px` },
+            { key: 'pixelRatio', value: res.pixelRatio },
+            { key: 'statusBarHeight', value: `${res.statusBarHeight}px` },
+            { key: 'language', value: res.language },
+            { key: 'fontSizeSetting', value: res.fontSizeSetting }
+          ]
+        }
+      })
+    },
+
+    // 辅助方法
+    sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms))
+    },
+
+    getSystemInfoAsync() {
+      return new Promise((resolve) => {
+        mpx.getSystemInfo({
+          success: resolve,
+          fail: () => resolve({})
+        })
+      })
+    },
+
+    getNetworkInfoAsync() {
+      return new Promise((resolve) => {
+        mpx.getNetworkType({
+          success: resolve,
+          fail: () => resolve({})
+        })
+      })
+    },
+
+    testStorageSupport() {
+      try {
+        mpx.setStorageSync('test', 'test')
+        mpx.removeStorageSync('test')
+        return true
+      } catch (e) {
+        return false
+      }
+    },
+
+    testAPISupport() {
+      const apis = [
+        'getSystemInfo', 'showToast', 'showModal', 'navigateTo',
+        'request', 'getStorage', 'setStorage', 'getLocation',
+        'chooseImage', 'previewImage', 'scanCode', 'vibrateShort'
+      ]
+      
+      let supported = 0
+      apis.forEach(api => {
+        if (mpx[api]) {
+          supported++
+        }
+      })
+      
+      return { supported, total: apis.length }
+    },
+
+    // 外部链接
+    openGitHub() {
+      mpx.setClipboardData({
+        data: 'https://github.com/didi/mpx',
+        success: () => {
+          mpx.showToast({
+            title: '链接已复制',
+            icon: 'success'
+          })
+        }
+      })
+    },
+
+    openDocs() {
+      mpx.setClipboardData({
+        data: 'https://mpxjs.cn',
+        success: () => {
+          mpx.showToast({
+            title: '链接已复制',
+            icon: 'success'
+          })
+        }
+      })
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.container
+  padding 0 20rpx 40rpx
+  
+.header
+  text-align center
+  background linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)
+  color white
+  
+  .app-logo
+    font-size 80rpx
+    margin-bottom 20rpx
+    
+  .app-name
+    font-size 40rpx
+    font-weight 600
+    color white
+    margin-bottom 10rpx
+    
+  .app-version
+    font-size 24rpx
+    color rgba(255, 255, 255, 0.8)
+    margin-bottom 15rpx
+    
+  .app-desc
+    font-size 26rpx
+    color rgba(255, 255, 255, 0.9)
+    line-height 1.5
+
+.section
+  margin-bottom 40rpx
+  
+.section-title
+  font-size 32rpx
+  font-weight 600
+  color #333
+  margin-bottom 20rpx
+  padding-left 20rpx
+  border-left 6rpx solid #4facfe
+
+.full-width
+  width 100%
+  margin-bottom 20rpx
+
+.env-results
+  margin-top 20rpx
+  
+  .env-item
+    display flex
+    justify-content space-between
+    align-items center
+    padding 20rpx 0
+    border-bottom 1rpx solid #f0f0f0
+    
+    &:last-child
+      border-bottom none
+      
+    .env-name
+      display flex
+      align-items center
+      
+      .env-icon
+        font-size 24rpx
+        margin-right 15rpx
+        
+      .env-text
+        font-size 28rpx
+        color #333
+        
+    .env-status
+      font-size 26rpx
+      padding 8rpx 16rpx
+      border-radius 20rpx
+      
+      &.success
+        background #d4edda
+        color #155724
+        
+      &.warning
+        background #fff3cd
+        color #856404
+        
+      &.error
+        background #f8d7da
+        color #721c24
+
+.platform-comparison
+  display grid
+  grid-template-columns repeat(auto-fit, minmax(300rpx, 1fr))
+  gap 20rpx
+
+.tech-stack
+  .tech-category
+    margin-bottom 30rpx
+    
+    .tech-title
+      font-size 28rpx
+      font-weight 500
+      color #333
+      margin-bottom 15rpx
+      padding 15rpx 20rpx
+      background #f8f9fa
+      border-radius 8rpx
+      
+    .tech-list
+      .tech-item
+        display flex
+        justify-content space-between
+        align-items center
+        padding 20rpx
+        border-bottom 1rpx solid #f0f0f0
+        
+        &:last-child
+          border-bottom none
+          
+        .tech-name
+          font-size 26rpx
+          color #333
+          
+        .tech-version
+          font-size 24rpx
+          color #666
+          padding 6rpx 12rpx
+          background #e9ecef
+          border-radius 12rpx
+
+.features-grid
+  display grid
+  grid-template-columns repeat(auto-fit, minmax(280rpx, 1fr))
+  gap 20rpx
+  
+  .feature-item
+    text-align center
+    
+    .feature-icon
+      font-size 50rpx
+      margin-bottom 15rpx
+      
+    .feature-title
+      font-size 28rpx
+      font-weight 500
+      color #333
+      margin-bottom 10rpx
+      
+    .feature-desc
+      font-size 24rpx
+      color #666
+      line-height 1.5
+
+.developer-info
+  .developer-item
+    display flex
+    justify-content space-between
+    align-items center
+    padding 20rpx 0
+    border-bottom 1rpx solid #f0f0f0
+    
+    &:last-child
+      border-bottom none
+      
+    .label
+      font-size 26rpx
+      color #666
+      
+    .value
+      font-size 26rpx
+      color #333
+      
+      &.link
+        color #667eea
+        text-decoration underline
+
+.debug-info
+  .debug-content
+    margin-top 20rpx
+    background #f8f9fa
+    border-radius 8rpx
+    padding 25rpx
+    
+    .debug-item
+      display flex
+      margin-bottom 15rpx
+      
+      &:last-child
+        margin-bottom 0
+        
+      .debug-key
+        font-size 24rpx
+        color #666
+        min-width 200rpx
+        
+      .debug-value
+        font-size 24rpx
+        color #333
+        word-break break-all
+        flex 1
+
+.footer
+  text-align center
+  padding 40rpx 0
+  color #999
+  
+  .copyright
+    font-size 24rpx
+    margin-bottom 10rpx
+    
+  .powered-by
+    font-size 22rpx
+</style>
+
+<script type="application/json">
+{
+  "usingComponents": {
+    "info-card": "../components/info-card",
+    "platform-card": "../components/platform-card"
+  },
+  "navigationBarTitleText": "关于"
+}
+</script>

@@ -1,0 +1,81 @@
+<template>
+  <view class="nav-grid">
+    <view 
+      class="nav-item card"
+      wx:for="{{items}}"
+      wx:key="title"
+      bindtap="handleNavTap"
+      data-path="{{item.path}}"
+      style="border-left: 6rpx solid {{item.color}}">
+      <view class="nav-icon">{{item.icon}}</view>
+      <view class="nav-title">{{item.title}}</view>
+    </view>
+  </view>
+</template>
+
+<script>
+import { createComponent } from '@mpxjs/core'
+import mpx from '@mpxjs/core'
+
+createComponent({
+  properties: {
+    items: {
+      type: Array,
+      value: []
+    }
+  },
+
+  methods: {
+    handleNavTap(event) {
+      const path = event.currentTarget.dataset.path
+      if (path) {
+        // 检查是否是 tabBar 页面
+        const tabBarPages = ['/pages/home', '/pages/components', '/pages/api-demo', '/pages/about']
+        if (tabBarPages.includes(path)) {
+          mpx.switchTab({
+            url: path
+          })
+        } else {
+          mpx.navigateTo({
+            url: path
+          })
+        }
+      }
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.nav-grid
+  display grid
+  grid-template-columns repeat(auto-fit, minmax(300rpx, 1fr))
+  gap 20rpx
+  
+  .nav-item
+    display flex
+    align-items center
+    padding 25rpx 30rpx
+    cursor pointer
+    transition all 0.3s ease
+    
+    &:hover
+    &:active
+      background #f8f9ff
+      transform scale(0.98)
+      
+    .nav-icon
+      font-size 40rpx
+      margin-right 20rpx
+      
+    .nav-title
+      font-size 28rpx
+      font-weight 500
+      color #333
+</style>
+
+<script type="application/json">
+{
+  "component": true
+}
+</script>

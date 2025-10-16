@@ -1,26 +1,144 @@
 <template>
-  <view class="list">
-    <view wx:for="{{listData}}" wx:key="*this">{{item}}</view>
+  <view class="enhanced-list">
+    <view class="list-header" wx:if="{{title}}">
+      <text class="list-title">{{title}}</text>
+    </view>
+    
+    <view class="list-content">
+      <view 
+        class="list-item"
+        wx:for="{{listData}}" 
+        wx:key="id"
+        bindtap="onItemClick"
+        data-item="{{item}}">
+        
+        <view class="item-icon" wx:if="{{item.icon}}">{{item.icon}}</view>
+        <view class="item-content">
+          <view class="item-title">{{item.title || item}}</view>
+          <view class="item-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        </view>
+        <view class="item-arrow" wx:if="{{showArrow}}">></view>
+      </view>
+    </view>
+    
+    <view class="list-footer" wx:if="{{footerText}}">
+      <text class="footer-text">{{footerText}}</text>
+    </view>
   </view>
 </template>
 
 <script>
 import { createComponent } from '@mpxjs/core'
+import mpx from '@mpxjs/core'
 
 createComponent({
-  data: {
-    listData: ['手机', '电视', '电脑']
+  properties: {
+    title: {
+      type: String,
+      value: ''
+    },
+    footerText: {
+      type: String,
+      value: ''
+    },
+    showArrow: {
+      type: Boolean,
+      value: true
+    },
+    listData: {
+      type: Array,
+      value: [
+        { id: 1, title: '手机', icon: '📱', description: '移动通讯设备' },
+        { id: 2, title: '电视', icon: '📺', description: '家庭娱乐设备' },
+        { id: 3, title: '电脑', icon: '💻', description: '个人计算设备' }
+      ]
+    }
+  },
+
+  methods: {
+    onItemClick(e) {
+      const item = e.currentTarget.dataset.item
+      
+      // 触发父组件事件
+      this.triggerEvent('itemClick', { item })
+      
+      // 显示反馈
+      mpx.showToast({
+        title: `点击了: ${item.title || item}`,
+        icon: 'none'
+      })
+    }
   }
 })
 </script>
 
 <style lang="stylus">
-  .list
-    background-color red
+.enhanced-list
+  background white
+  border-radius 12rpx
+  overflow hidden
+  box-shadow 0 2rpx 8rpx rgba(0, 0, 0, 0.1)
+  
+  .list-header
+    padding 30rpx
+    border-bottom 1rpx solid #f0f0f0
+    background #fafafa
+    
+    .list-title
+      font-size 32rpx
+      font-weight 600
+      color #333
+      
+  .list-content
+    .list-item
+      display flex
+      align-items center
+      padding 30rpx
+      border-bottom 1rpx solid #f0f0f0
+      transition background-color 0.2s ease
+      
+      &:last-child
+        border-bottom none
+        
+      &:active
+        background #f8f9fa
+        
+      .item-icon
+        font-size 36rpx
+        margin-right 20rpx
+        
+      .item-content
+        flex 1
+        
+        .item-title
+          font-size 30rpx
+          color #333
+          margin-bottom 6rpx
+          
+        .item-desc
+          font-size 24rpx
+          color #999
+          line-height 1.4
+          
+      .item-arrow
+        font-size 28rpx
+        color #ccc
+        margin-left 15rpx
+        
+  .list-footer
+    padding 20rpx 30rpx
+    background #fafafa
+    border-top 1rpx solid #f0f0f0
+    
+    .footer-text
+      font-size 24rpx
+      color #999
+      text-align center
+      width 100%
 </style>
 
 <script type="application/json">
-  {
-    "component": true
-  }
+{
+  "component": true
+}
 </script>

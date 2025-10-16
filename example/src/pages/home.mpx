@@ -1,0 +1,212 @@
+<template>
+  <view class="container">
+    <!-- 头部欢迎区域 -->
+    <view class="header-section">
+      <view class="welcome-card card">
+        <view class="title">🚀 欢迎使用 MPX</view>
+        <view class="subtitle">跨平台小程序开发框架</view>
+        <view class="text">一套代码，多端运行 - 微信、支付宝、百度、字节跳动小程序以及 Web</view>
+        <button class="btn-primary" bindtap="navigateToComponents">探索组件</button>
+      </view>
+    </view>
+
+    <!-- 特性展示区域 -->
+    <view class="features-section">
+      <view class="title">✨ 核心特性</view>
+      <feature-card 
+        wx:for="{{features}}" 
+        wx:key="id"
+        title="{{item.title}}"
+        description="{{item.description}}"
+        icon="{{item.icon}}">
+      </feature-card>
+    </view>
+
+    <!-- 快速导航区域 -->
+    <view class="navigation-section">
+      <view class="title">🧭 快速导航</view>
+      <nav-grid items="{{navItems}}"></nav-grid>
+    </view>
+
+    <!-- 环境信息 -->
+    <view class="env-section">
+      <view class="card">
+        <view class="subtitle">📱 当前环境</view>
+        <view class="env-info">
+          <view class="env-item">
+            <text class="label">平台：</text>
+            <text class="value">{{platformInfo.platform}}</text>
+          </view>
+          <view class="env-item">
+            <text class="label">版本：</text>
+            <text class="value">{{platformInfo.version}}</text>
+          </view>
+          <view class="env-item">
+            <text class="label">设备：</text>
+            <text class="value">{{platformInfo.model}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import { createPage } from '@mpxjs/core'
+import mpx from '@mpxjs/core'
+
+createPage({
+  data: {
+    features: [
+      {
+        id: 1,
+        title: '跨平台开发',
+        description: '一套代码支持微信、支付宝、百度、字节跳动等多个小程序平台',
+        icon: '🌐'
+      },
+      {
+        id: 2,
+        title: '渐进式开发',
+        description: '支持原生小程序语法，可以渐进式迁移现有项目',
+        icon: '📈'
+      },
+      {
+        id: 3,
+        title: 'Vue.js 语法',
+        description: '使用熟悉的 Vue.js 开发语法，降低学习成本',
+        icon: '💚'
+      },
+      {
+        id: 4,
+        title: '性能优化',
+        description: '编译时优化和运行时优化，提供更好的性能表现',
+        icon: '⚡'
+      }
+    ],
+    navItems: [
+      { title: '组件展示', path: '/pages/components', icon: '🧩', color: '#667eea' },
+      { title: 'API 演示', path: '/pages/api-demo', icon: '🔧', color: '#f093fb' },
+      { title: '关于项目', path: '/pages/about', icon: 'ℹ️', color: '#4facfe' }
+    ],
+    platformInfo: {
+      platform: '未知',
+      version: '未知',
+      model: '未知'
+    }
+  },
+
+  onLoad() {
+    this.getPlatformInfo()
+  },
+
+  onShow() {
+    // 页面显示时更新信息
+  },
+
+  methods: {
+    navigateToComponents() {
+      mpx.switchTab({
+        url: '/pages/components'
+      })
+    },
+
+    getPlatformInfo() {
+      // 获取平台信息
+      mpx.getSystemInfo({
+        success: (res) => {
+          this.platformInfo = {
+            platform: res.platform || '未知',
+            version: res.version || '未知',
+            model: res.model || '未知'
+          }
+        },
+        fail: () => {
+          console.log('获取系统信息失败')
+        }
+      })
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.container
+  min-height 100vh
+//  修复 MPX 的 BUG
+.mpx-tab-bar
+    z-index 1000
+.header-section
+  margin-bottom 40rpx
+  
+  .welcome-card
+    text-align center
+    background linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+    color white
+    
+    .title
+      color white
+      font-size 40rpx
+      margin-bottom 15rpx
+      
+    .subtitle
+      color rgba(255, 255, 255, 0.9)
+      font-size 30rpx
+      margin-bottom 20rpx
+      
+    .text
+      color rgba(255, 255, 255, 0.8)
+      font-size 26rpx
+      line-height 1.6
+      margin-bottom 30rpx
+
+.features-section
+  margin-bottom 40rpx
+  
+  .title
+    text-align center
+    font-size 32rpx
+    font-weight 600
+    color #333
+    margin-bottom 30rpx
+
+.navigation-section
+  margin-bottom 40rpx
+  
+  .title
+    text-align center
+    font-size 32rpx
+    font-weight 600
+    color #333
+    margin-bottom 30rpx
+
+.env-section
+  .env-info
+    .env-item
+      display flex
+      justify-content space-between
+      align-items center
+      padding 15rpx 0
+      border-bottom 1rpx solid #f0f0f0
+      
+      &:last-child
+        border-bottom none
+        
+      .label
+        font-size 26rpx
+        color #666
+        
+      .value
+        font-size 26rpx
+        color #333
+        font-weight 500
+</style>
+
+<script type="application/json">
+{
+  "usingComponents": {
+    "feature-card": "../components/feature-card",
+    "nav-grid": "../components/nav-grid"
+  },
+  "navigationBarTitleText": "MPX Demo 首页"
+}
+</script>

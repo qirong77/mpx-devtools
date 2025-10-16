@@ -6,20 +6,112 @@ mpx.use(apiProxy, { usePromise: true })
 
 createApp({
   onLaunch() {
-    //
+    console.log('MPX Demo App 启动')
+  },
+  globalData: {
+    appName: 'MPX Demo App',
+    version: '1.0.0'
   }
 })
 </script>
 
 <style>
-  /*此处编写全局样式*/
+/* 全局样式 */
+page {
+  background-color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.container {
+  padding: 20rpx;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+
+.text {
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+  margin: 10rpx;
+}
+
+.btn-secondary {
+  background: #f8f9fa;
+  color: #333;
+  border: 2rpx solid #e9ecef;
+  border-radius: 8rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+  margin: 10rpx;
+}
 </style>
 
 <script type="application/json">
   {
     "pages": [
-      "./pages/index"
-    ]
+      "./pages/home",
+      "./pages/components",
+      "./pages/api-demo",
+      "./pages/about"
+    ],
+    "tabBar": {
+      "color": "#999",
+      "selectedColor": "#667eea",
+      "backgroundColor": "#ffffff",
+      "borderStyle": "black",
+      "list": [
+        {
+          "pagePath": "pages/home",
+          "text": "首页"
+        },
+        {
+          "pagePath": "pages/components",
+          "text": "组件"
+        },
+        {
+          "pagePath": "pages/api-demo",
+          "text": "API"
+        },
+        {
+          "pagePath": "pages/about",
+          "text": "关于"
+        }
+      ]
+    },
+    "window": {
+      "navigationBarTitleText": "MPX Demo",
+      "navigationBarBackgroundColor": "#667eea",
+      "navigationBarTextStyle": "white",
+      "backgroundColor": "#f5f5f5"
+    }
   }
 </script>
 

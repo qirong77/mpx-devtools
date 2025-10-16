@@ -1,0 +1,141 @@
+<template>
+  <view class="platform-card card {{current ? 'current-platform' : ''}}">
+    <view class="platform-header">
+      <view class="platform-logo">{{logo}}</view>
+      <view class="platform-name">{{name}}</view>
+      <view class="platform-badge {{status}}" wx:if="{{current}}">当前平台</view>
+    </view>
+    
+    <view class="platform-features">
+      <view class="feature-tag" wx:for="{{features}}" wx:key="*this">
+        {{item}}
+      </view>
+    </view>
+    
+    <view class="platform-status">
+      <view class="status-indicator {{status}}"></view>
+      <text class="status-text">{{statusText[status]}}</text>
+    </view>
+  </view>
+</template>
+
+<script>
+import { createComponent } from '@mpxjs/core'
+
+createComponent({
+  properties: {
+    name: {
+      type: String,
+      value: ''
+    },
+    logo: {
+      type: String,
+      value: '📱'
+    },
+    features: {
+      type: Array,
+      value: []
+    },
+    status: {
+      type: String,
+      value: 'supported'
+    },
+    current: {
+      type: Boolean,
+      value: false
+    }
+  },
+
+  data: {
+    statusText: {
+      'supported': '已支持',
+      'developing': '开发中',
+      'planned': '计划中',
+      'unsupported': '不支持'
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.platform-card
+  position relative
+  transition all 0.3s ease
+  border 2rpx solid transparent
+  
+  &.current-platform
+    border-color #4facfe
+    box-shadow 0 4rpx 16rpx rgba(79, 172, 254, 0.15)
+    
+  &:hover
+    transform translateY(-2rpx)
+    
+  .platform-header
+    display flex
+    align-items center
+    justify-content space-between
+    margin-bottom 20rpx
+    
+    .platform-logo
+      font-size 40rpx
+      margin-right 15rpx
+      
+    .platform-name
+      font-size 30rpx
+      font-weight 600
+      color #333
+      flex 1
+      
+    .platform-badge
+      font-size 20rpx
+      padding 6rpx 12rpx
+      border-radius 20rpx
+      
+      &.supported
+        background #d4edda
+        color #155724
+        
+  .platform-features
+    margin-bottom 20rpx
+    
+    .feature-tag
+      display inline-block
+      font-size 22rpx
+      padding 8rpx 16rpx
+      background #f8f9fa
+      color #666
+      border-radius 20rpx
+      margin 0 8rpx 8rpx 0
+      
+  .platform-status
+    display flex
+    align-items center
+    
+    .status-indicator
+      width 16rpx
+      height 16rpx
+      border-radius 50%
+      margin-right 12rpx
+      
+      &.supported
+        background #28a745
+        
+      &.developing
+        background #ffc107
+        
+      &.planned
+        background #6c757d
+        
+      &.unsupported
+        background #dc3545
+        
+    .status-text
+      font-size 24rpx
+      color #666
+</style>
+
+<script type="application/json">
+{
+  "component": true
+}
+</script>

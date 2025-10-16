@@ -1,0 +1,61 @@
+<template>
+  <view class="feature-card card">
+    <view class="feature-icon">{{icon}}</view>
+    <view class="feature-title">{{title}}</view>
+    <view class="feature-description">{{description}}</view>
+  </view>
+</template>
+
+<script>
+import { createComponent } from '@mpxjs/core'
+
+createComponent({
+  properties: {
+    title: {
+      type: String,
+      value: ''
+    },
+    description: {
+      type: String,
+      value: ''
+    },
+    icon: {
+      type: String,
+      value: '📦'
+    }
+  }
+})
+</script>
+
+<style lang="stylus">
+.feature-card
+  text-align center
+  transition all 0.3s ease
+  border 2rpx solid transparent
+  
+  &:hover
+    border-color #667eea
+    transform translateY(-4rpx)
+    box-shadow 0 4rpx 16rpx rgba(102, 126, 234, 0.15)
+    
+  .feature-icon
+    font-size 60rpx
+    margin-bottom 20rpx
+    
+  .feature-title
+    font-size 30rpx
+    font-weight 600
+    color #333
+    margin-bottom 15rpx
+    
+  .feature-description
+    font-size 24rpx
+    color #666
+    line-height 1.5
+</style>
+
+<script type="application/json">
+{
+  "component": true
+}
+</script>
