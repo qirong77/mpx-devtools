@@ -1,15 +1,11 @@
 {
   "name": "mpx-devtools",
-  "version": "1.0.2",
-  "description": "滴滴跨端框架 MPX 的 Devtools，可视化查看、修改组件树的数据，施工中🚧...",
-  "main": "src/webpack-plugin/index.js",
+  "version": "1.0.3",
+  "description": "滴滴跨端框架 MPX 的 Devtools，可视化查看、修改组件树的数据",
   "files": [
     "src",
     "README.md"
   ],
-  "directories": {
-    "example": "example"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
