@@ -3,10 +3,7 @@ const JSON5 = require("json5");
 const MPX_DEVTOOLS_IMPORT_PREFIX = "";
 module.exports = function (source) {
   const filePath = this.resourcePath;
-  if (path.extname(filePath) !== ".mpx") {
-    return source;
-  }
-  if (filePath.includes("mpx-devtools") || filePath.includes('node_modules')) {
+  if (path.extname(filePath) !== ".mpx" || filePath.includes('node_modules')) {
     return source;
   }
   const relativePath = path.relative(process.cwd(), filePath);

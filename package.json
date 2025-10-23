@@ -1,13 +1,13 @@
 {
   "name": "mpx-devtools",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "滴滴跨端框架 MPX 的 Devtools，可视化查看、修改组件树的数据",
   "files": [
     "src",
     "README.md"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "example": "cd example && npm install && npm run dev"
   },
   "keywords": [
     "mpx",
