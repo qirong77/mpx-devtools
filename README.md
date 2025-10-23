@@ -1,7 +1,7 @@
 # MPX Devtools
 
 MPX Devtools 是一个为滴滴跨端框架 MPX 开发的开发者工具，它可以帮助开发者可视化查看和修改组件树的数据。
-![mpx-devtools-image](assets/image.png)
+![mpx-devtools-image](assets/image_devtools.png)
 
 ## Why MPX Devtools
 
