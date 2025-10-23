@@ -238,6 +238,7 @@ createComponent({
                 key: 'osimEnv',
                 data: this.osimEnv
             });
+            mpx.reLaunch();
         },
         // 本地存储相关方法
         saveToStorage() {

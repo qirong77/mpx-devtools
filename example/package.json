@@ -13,7 +13,7 @@
         "@mpxjs/pinia": "^2.10.0",
         "@mpxjs/store": "^2.10.0",
         "@mpxjs/utils": "^2.10.0",
-        "mpx-devtools": "^1.0.4",
+        "mpx-devtools": "^1.0.5",
         "pinia": "^2.0.14",
         "vue": "^2.7.0",
         "vue-demi": "^0.14.6",

@@ -7,6 +7,11 @@ class MpxDevtoolsWebpackPlugin {
   }
 
   apply(compiler) {
+    const target = process.env.MPX_CURRENT_TARGET_MODE;
+    if (target === "web") {
+      console.log(`[MpxDevtoolsWebpackPlugin] Skipped for target: ${target}`);
+      return;
+    }
     const loaderPath = 'mpx-devtools/src/webpack-plugin/loader/mpx-devtools-source-loader.js'
     compiler.options.module.rules.push({
       test: /\.mpx$/,
