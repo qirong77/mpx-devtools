@@ -1,15 +1,32 @@
 {
   "name": "mpx-devtools",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "滴滴跨端框架 MPX 的 Devtools，可视化查看、修改组件树的数据，施工中🚧...",
-  "main": "index.js",
+  "main": "src/webpack-plugin/index.js",
+  "files": [
+    "src",
+    "README.md"
+  ],
   "directories": {
     "example": "example"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mpx",
+    "devtools",
+    "mpx-devtools",
+    "webpack-plugin"
+  ],
+  "author": "qirong77",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qirong77/mpx-devtools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qirong77/mpx-devtools/issues"
+  },
+  "homepage": "https://github.com/qirong77/mpx-devtools#readme",
   "license": "ISC"
 }

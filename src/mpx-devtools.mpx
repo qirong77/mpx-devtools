@@ -160,6 +160,7 @@
 </script>
 <script>
 import mpx, { createComponent, ONHIDE, UNMOUNTED, BEFOREUNMOUNT,MOUNTED } from '@mpxjs/core'
+  import mpx_devtools from '@mpxjs/core'
 
 createComponent({
     data: {
@@ -1002,9 +1003,10 @@ createComponent({
                     this.updateComponentTree()
                 }, 10000) // 每10秒自动刷新一次
             } else {
+                mpx_devtools.mixin(mpxDevToolsMixin_devtools)
                 console.debug('MPX DevTools API not ready, retrying...')
-                // 如果API还没准备好，1秒后重试
-                setTimeout(initDevTools, 1000)
+                // 如果API还没准备好，5秒后重试
+                setTimeout(initDevTools, 5000)
             }
         }
 
@@ -1041,7 +1043,7 @@ createComponent({
             return this.visibleNodes.map(item => ({
                 ...item,
                 displayFileName: this.getDisplayFileName(item.fileSrc)
-            }))
+            })).filter(item => item.displayFileName !== '未知组件')
         }
     },
 })

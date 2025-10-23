@@ -1,6 +1,6 @@
 const path = require("path");
 const JSON5 = require("json5");
-const MPX_DEVTOOLS_IMPORT_PREFIX = "@/components/";
+const MPX_DEVTOOLS_IMPORT_PREFIX = "";
 module.exports = function (source) {
   const filePath = this.resourcePath;
   if (path.extname(filePath) !== ".mpx") {
@@ -105,7 +105,7 @@ function addMpxSrcPathData(source, relativePath) {
 }
 
 function addMpxDevtoolsTag(source) {
-  const importPath = `${MPX_DEVTOOLS_IMPORT_PREFIX}mpx-devtools/mpx-devtools.mpx`;
+  const importPath = `${MPX_DEVTOOLS_IMPORT_PREFIX}mpx-devtools/src/mpx-devtools.mpx`;
   const devtoolsTag = `<mpx-devtools />`;
   // 仅在包含 createPage 的文件中注入（page 组件）
   const scriptMatch = source.match(/(<script[^>]*>)([\s\S]*?)(<\/script>)/i);
@@ -191,7 +191,7 @@ function addMpxDevtoolsTag(source) {
 function addMixinImport(source, relativePath) {
   const str = ` 
   import ___mpx from '@mpxjs/core'
-  import mpxDevToolsMixin from "${MPX_DEVTOOLS_IMPORT_PREFIX}mpx-devtools/mixin/mpx-devtools-mixin";
+  import mpxDevToolsMixin from "${MPX_DEVTOOLS_IMPORT_PREFIX}mpx-devtools/src/mixin/mpx-devtools-mixin.js";
   ___mpx.mixin(mpxDevToolsMixin)
     `;
   const isApp = relativePath.endsWith("app.mpx");

@@ -7,11 +7,7 @@ class MpxDevtoolsWebpackPlugin {
   }
 
   apply(compiler) {
-    const loaderPath = path.resolve(
-      __dirname,
-      "loader",
-      "mpx-devtools-source-loader.js"
-    );
+    const loaderPath = 'mpx-devtools/src/webpack-plugin/loader/mpx-devtools-source-loader.js'
     compiler.options.module.rules.push({
       test: /\.mpx$/,
       use: [{ loader: loaderPath }],
