@@ -24,6 +24,7 @@ page {
 
 .container {
   padding: 20rpx;
+  max-width: 800rpx;
 }
 
 .card {

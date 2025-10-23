@@ -3,6 +3,8 @@
  * 提供组件生命周期追踪和组件树可视化功能
  */
 
+import mpx from "@mpxjs/core";
+
 class MPXDevTools {
   constructor() {
     this.instanceMapSet = new WeakSet(); // 存储组件实例和其信息的映射
@@ -62,35 +64,38 @@ class MPXDevTools {
     }
   }
   exposeGlobalMethods() {
-    if (typeof wx !== "undefined") {
-      // 暴露调试方法到 wx 全局对象
-      wx.mpxDevTools = {
-        getinstanceMapSet: () => this.instanceMapSet,
-        getRoot: () => {
-          const roots = [...new Set(this.rootInstance)].filter((inst) => {
-            const state = inst.__mpxProxy?.proxy?.__mpxProxy?.state;
-            if (["__unmounted__"].includes(state)) {
-              return false;
-            }
-            return true;
-          });
-          this.rootInstance = roots; 
-          return roots;
-        },
-        getInstanceTreeRoot() {
-          const roots = wx.mpxDevTools.getRoot();
-          const node = createInstanceTree(roots[roots.length - 1], 30);
-          return node;
-        },
-        // 获取指定组件的子组件
-        getChildrenComponents(instance) {
-          return findChildrenComponent(instance);
-        },
-        // 获取指定组件的父组件
-        getParentComponent(instance) {
-          return findParentComponent(instance);
-        },
-      };
+    mpx.mpxDevTools = {
+      getinstanceMapSet: () => this.instanceMapSet,
+      getRoot: () => {
+        const roots = [...new Set(this.rootInstance)].filter((inst) => {
+          const state = inst.__mpxProxy?.proxy?.__mpxProxy?.state;
+          if (["__unmounted__"].includes(state)) {
+            return false;
+          }
+          return true;
+        });
+        this.rootInstance = roots;
+        return roots;
+      },
+      getInstanceTreeRoot() {
+        const roots = mpx.mpxDevTools.getRoot();
+        const node = createInstanceTree(roots[roots.length - 1], 30);
+        return node;
+      },
+      // 获取指定组件的子组件
+      getChildrenComponents(instance) {
+        return findChildrenComponent(instance);
+      },
+      // 获取指定组件的父组件
+      getParentComponent(instance) {
+        return findParentComponent(instance);
+      },
+    };
+    self.mpx = mpx;
+    self.mpxDevTools = mpx.mpxDevTools;
+    if(wx && typeof wx === "object") {
+      wx.mpxDevTools = mpx.mpxDevTools;
+      wx.mpx = mpx;
     }
   }
 }
@@ -99,10 +104,11 @@ class MPXDevTools {
 const mpxDevTools = new MPXDevTools();
 class MpxDevtoolsComponentInfo {
   constructor(instance) {
-    this.type = instance?.$rawOptions?.__type__ || "未知";
-    this.data = instance?.$rawOptions?.data || "空";
+    this.type = instance?.$rawOptions?.__type__ || "未知类型";
+    this.data = instance?.$rawOptions?.data || {};
     this.props = instance?.$rawOptions?.props || {};
     this.computed = instance?.$rawOptions?.computed || {};
+    this.__mpx_file_src__ = this.data.__mpx_file_src__ || this.computed.__mpx_file_src__?.() || '未知组件';
   }
 }
 function findParentComponent(instance) {
@@ -257,6 +263,9 @@ function createInstanceTree(instance, depth = 0) {
     children: [],
   };
   if (depth > 0) {
+    if(!instance.mpxDevToolsChildren) {
+      instance.mpxDevToolsChildren = findChildrenComponent(instance);
+    }
     const children = instance.mpxDevToolsChildren || [];
     children.forEach((child) => {
       tree.children.push(createInstanceTree(child, depth - 1));

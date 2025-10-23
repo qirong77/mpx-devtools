@@ -1,215 +1,165 @@
 <template>
     <view>
         <view
-            class="devtools-container {{ isDrageMove ? 'devtools-floating' : '' }} {{ isCollapsed ? 'devtools-container-collapsed' : '' }}"
+            class="mpx-devtools-container {{ isDrageMove ? 'mpx-devtools-container--floating' : '' }} {{ isCollapsed ? 'mpx-devtools-container--collapsed' : '' }}"
             style="{{ isDrageMove ? 'left: ' + dragPosition.x + '%; top: ' + dragPosition.y + '%; width: ' + containerSize.width + 'rpx; height: ' + containerSize.height + 'rpx;' : '' }}">
-            <view class="header {{ isCollapsed ? 'header-collapsed' : '' }}"
+            <!-- 头部区域 -->
+                <view class="mpx-devtools-header {{ isCollapsed ? 'mpx-devtools-header--collapsed' : '' }}"
                 bindtouchstart="{{ isDrageMove ? 'onTouchStart' : '' }}"
-                bindtouchmove="{{ isDrageMove ? 'onTouchMove' : '' }}"
+                catchtouchmove="{{ isDrageMove ? 'onTouchMove' : '' }}"
                 bindtouchend="{{ isDrageMove ? 'onTouchEnd' : '' }}">
-                <view wx:if="{{ isDrageMove }}" class="drag-indicator">
-                    <text class="drag-icon">⋮⋮</text>
+                <!-- 拖拽指示器 -->
+                <view wx:if="{{ isDrageMove }}" class="mpx-devtools-drag-indicator">
+                    <text class="mpx-devtools-drag-icon">⋮⋮</text>
                 </view>
-                <view class="header-top">
-                    <view class="title-section">
-                        <text class="title">🌲 MPX DevTools</text>
+                <!-- 头部顶部（标题+状态） -->
+                <view class="mpx-devtools-header__top">
+                    <view class="mpx-devtools-title-section">
+                        <text class="mpx-devtools-title">🌲 MPX DevTools</text>
                     </view>
-
-                    <view wx:if="{{ !isCollapsed }}" class="status-section" style="margin-left: 4px;">
-                        <text class="update-time" bindtap="updateComponentTree">🕒 刷新</text>
-                    </view>
-                    <view class="status-section">
-                        <view class="collapse-toggle-btn" bindtap="toggleCollapseGlobal">
-                            <text class="collapse-toggle-icon">{{ isCollapsed ? '📋' : '📁' }}</text>
-                            <text class="collapse-toggle-text">{{ isCollapsed ? '展开' : '收起' }}</text>
+                    <!-- 刷新按钮（非折叠时显示） -->
+                    <!-- <view wx:if="{{ !isCollapsed }}" class="mpx-devtools-status-section" style="margin-left: 4px;">
+                        <text class="mpx-devtools-update-time" bindtap="updateComponentTree">🕒 刷新</text>
+                    </view> -->
+                    <!-- 折叠按钮 -->
+                    <view class="mpx-devtools-status-section">
+                        <view class="mpx-devtools-collapse-btn" bindtap="toggleCollapseGlobal">
+                            <text class="mpx-devtools-collapse-btn__icon">{{ isCollapsed ? '📋' : '📁' }}</text>
+                            <text class="mpx-devtools-collapse-btn__text">{{ isCollapsed ? '展开' : '收起' }}</text>
                         </view>
                     </view>
                 </view>
-                <view wx:if="{{ !isCollapsed }}"
-                    class="filter-container  {{ searchMode === 'component' ? 'filter-wrapper-component' : 'filter-wrapper-data' }}">
-                    <view class="filter-wrapper">
-                        <text class="filter-icon">🔍</text>
-                        <input class="filter-input"
-                            placeholder="{{ searchMode === 'component' ? '搜索组件（双击输入框搜索数据）' : '搜索数据（双击输入框搜索组件）' }}"
-                            value="{{ filterText }}" bindinput="onFilterInput" bindconfirm="onFilterConfirm"
-                            bindtap="onInputDoubleClick" />
-                        <view wx:if="{{ filterText }}" class="clear-btn" bindtap="clearFilter">
-                            <text class="clear-icon">×</text>
-                        </view>
+                <!-- 环境设置区域（非折叠时显示） -->
+                <view wx:if="{{ !isCollapsed && showOsimEnvInput }}" class="mpx-devtools-env">
+                    <view class="mpx-devtools-env__label">
+                        <text>osim{{ '__' }}</text>
+                        <text class="mpx-devtools-env__current">{{ ' ' + osimEnv || '未设置' }}</text>
+                    </view>
+                    <view class="mpx-devtools-env__controls">
+                        <input class="mpx-devtools-env__input" bindblur="onOsimEnvInputBlur" type="number"
+                            placeholder="输入环境编号（如：1）" value="{{ osimEnvInput }}" bindinput="onOsimEnvInput" />
+                        <text class="mpx-devtools-env__btn" bindtap="confirmOsimEnv">修改</text>
                     </view>
                 </view>
             </view>
-            <view class="devtools-main" wx:if="{{ !isCollapsed }}">
-                <view class="tree-container" wx:if="{{ visibleNodesWithDisplayName.length > 0 }}">
-                    <view wx:for="{{ visibleNodesWithDisplayName }}" wx:key="index" class="tree-node"
-                        style="padding-left: {{item.level * 20}}px;">
-                        <view class="node-content">
-                            <view class="collapse-btn" style="opacity: {{ item.hasChildren ? 1 : 0.3 }}"
-                                bindtap="toggleCollapse" data-index="{{ index }}">
-                                <text class="collapse-icon">{{ item.collapsed ? '+' : '-' }}</text>
+            <view style="flex: 1;position: relative;overflow: hidden;">
+                <!-- 主体内容区（非折叠时显示） -->
+                <view class="mpx-devtools-main" wx:if="{{ !isCollapsed }}">
+                    <view wx:if="{{ !isCollapsed }}" class="mpx-devtools-filter-container">
+                        <view class="mpx-devtools-filter-wrapper">
+                            <text class="mpx-devtools-filter-wrapper__icon">🔍</text>
+                            <input class="mpx-devtools-filter-wrapper__input" placeholder="搜索组件名称或数据值"
+                                value="{{ filterText }}" bindinput="onFilterInput" bindconfirm="onFilterConfirm" />
+                            <!-- 清除按钮（有过滤文本时显示） -->
+                            <view wx:if="{{ filterText }}" class="mpx-devtools-filter-wrapper__clear-btn"
+                                bindtap="clearFilter">
+                                <text class="mpx-devtools-filter-wrapper__clear-icon">×</text>
                             </view>
-                            <view class="info-btn" bindtap="showComponentInfo" data-index="{{ index }}">
-                                <text class="info-icon">!</text>
-                            </view>
-                            <view class="file-src-container">
-                                <text class="node-text {{ item.isHighlighted ? 'highlighted' : '' }}">{{
-                                    item.displayFileName }}</text>
-                                <view wx:if="{{ item.matchedProperties.length > 0 }}" class="matched-properties">
-                                    <text wx:for="{{ item.matchedProperties }}" wx:key="prop" class="matched-prop">{{
-                                        item
+                        </view>
+                    </view>
+                    <!-- 组件树容器 -->
+                    <view class="mpx-devtools-tree-container" wx:if="{{ visibleNodesWithDisplayName.length > 0 }}">
+                        <view wx:for="{{ visibleNodesWithDisplayName }}" wx:key="index" class="mpx-devtools-tree-node"
+                            style="padding-left: {{item.level * 20}}px;">
+                            <view class="mpx-devtools-tree-node__content">
+                                <!-- 节点折叠按钮 -->
+                                <view class="mpx-devtools-tree-node__collapse-btn"
+                                    style="opacity: {{ item.hasChildren ? 1 : 0.3 }}" bindtap="toggleCollapse"
+                                    data-index="{{ index }}">
+                                    <text class="mpx-devtools-tree-node__collapse-icon">{{ item.collapsed ? '+' : '-'
                                         }}</text>
                                 </view>
+                                <!-- 节点信息按钮 -->
+                                <view class="mpx-devtools-tree-node__info-btn" bindtap="showComponentInfo"
+                                    data-index="{{ index }}">
+                                    <text class="mpx-devtools-tree-node__info-icon">!</text>
+                                </view>
+                                <!-- 节点文件信息 -->
+                                <view class="mpx-devtools-tree-node__file-container">
+                                    <text
+                                        class="mpx-devtools-tree-node__text {{ item.isHighlighted ? 'mpx-devtools-tree-node__text--highlighted' : '' }}">{{
+                                            item.displayFileName }}</text>
+                                    <!-- 匹配的属性（数据搜索时显示） -->
+                                    <view wx:if="{{ item.matchedProperties.length > 0 }}"
+                                        class="mpx-devtools-tree-node__matched-properties">
+                                        <text wx:for="{{ item.matchedProperties }}" wx:key="prop"
+                                            class="mpx-devtools-tree-node__matched-prop">{{
+                                                item
+                                            }}</text>
+                                    </view>
+                                </view>
                             </view>
                         </view>
                     </view>
-                </view>
-                <view wx:else class="empty-state">
-                    <text class="empty-text">暂无组件数据</text>
-                    <text class="empty-hint">请点击右上角刷新按钮获取最新组件树<br />或修改过滤条件</text>
+                    <!-- 空状态（无组件数据时显示） -->
+                    <view wx:else class="mpx-devtools-empty-state">
+                        <text class="mpx-devtools-empty-state__text">暂无组件数据</text>
+                        <text class="mpx-devtools-empty-state__hint">请点击右上角刷新按钮获取最新组件树<br />或修改过滤条件</text>
+                    </view>
                 </view>
             </view>
 
 
-
-            <!-- 拉伸控制器 -->
-            <view wx:if="{{ isDrageMove && !isCollapsed }}" class="resize-controls">
-                <!-- 右下角拉伸控制器 -->
-                <view class="resize-handle resize-handle-br" bindtouchstart="onResizeStart" bindtouchmove="onTouchMove"
-                    bindtouchend="onTouchEnd" data-action="resize">
-                    <text class="resize-icon">⟲</text>
+            <!-- 拉伸控制器（悬浮+非折叠时显示） -->
+                <view wx:if="{{ isDrageMove && !isCollapsed }}" class="mpx-devtools-resize-controls">
+                <view class="mpx-devtools-resize-handle mpx-devtools-resize-handle--br" bindtouchstart="onResizeStart"
+                    catchtouchmove="onTouchMove" bindtouchend="onTouchEnd" data-action="resize">
+                    <text class="mpx-devtools-resize-handle__icon">⟲</text>
                 </view>
-                <!-- 左下角拉伸控制器 -->
-                <!-- <view class="resize-handle resize-handle-bl" bindtouchstart="onResizeStart" bindtouchmove="onTouchMove"
-                    bindtouchend="onTouchEnd" data-action="resize">
-                    <text class="resize-icon">⟳</text>
-                </view> -->
             </view>
         </view>
-        <!-- 组件信息弹窗 -->
-        <view wx:if="{{ showInfoModal }}" class="modal-overlay" bindtap="closeInfoModal">
-            <view class="info-modal" catchtap="preventClose">
-                <view class="modal-header">
-                    <text class="modal-title">组件信息</text>
-                    <view class="close-btn" bindtap="closeInfoModal">
-                        <text class="close-icon">×</text>
+
+        <!-- 组件信息弹窗（显示时渲染） -->
+        <view wx:if="{{ showInfoModal }}" class="mpx-devtools-modal-overlay" bindtap="closeInfoModal">
+            <view class="mpx-devtools-modal" catchtap="preventClose">
+                <!-- 弹窗头部 -->
+                <view class="mpx-devtools-modal__header">
+                    <text class="mpx-devtools-modal__title">组件信息</text>
+                    <view class="mpx-devtools-modal__close-btn" bindtap="closeInfoModal">
+                        <text class="mpx-devtools-modal__close-icon">×</text>
                     </view>
                 </view>
+                <mpx-devtool-tab bind:tabchange="onTabChange" tabList="{{ tabList }}" activeTab="{{ activeTab }}">
 
-                <view class="modal-content">
-                    <view class="component-path">
-                        <text class="path-label">组件路径:</text>
-                        <text class="path-text">{{ currentComponentInfo.fileSrc }}</text>
+                </mpx-devtool-tab>
+                <!-- 弹窗内容 -->
+                <view class="mpx-devtools-modal__content">
+                    <!-- 组件路径 -->
+                    <view class="mpx-devtools-component-path">
+                        <view class="mpx-devtools-copy-btn" bindtap="copyPropertyValue"
+                            data-value="{{ currentComponentInfo.fileSrc }}" data-key="{{ '路径' }}">
+                            <text class="mpx-devtools-copy-btn__icon">📋</text>
+                        </view>
+                        <text class="mpx-devtools-component-path__label">组件路径</text>
+                        <text class="mpx-devtools-component-path__text">{{ currentComponentInfo.fileSrc }}</text>
                     </view>
 
-                    <!-- Props 部分 -->
-                    <view class="section">
-                        <view class="section-header">
-                            <text class="section-title">Props ({{ currentComponentInfo.propsCount }})</text>
-                        </view>
-                        <view class="section-content">
-                            <block wx:if="{{ currentComponentInfo.props && currentComponentInfo.props.length > 0 }}">
-                                <view wx:for="{{ currentComponentInfo.props }}" wx:key="key" class="property-item">
-                                    <view class="property-content" wx:if="{{ !item.isExpandable }}">
-                                        <view class="copy-btn" bindtap="copyPropertyValue"
-                                            data-value="{{ item.item.expandedValue ||  item.displayValue }}"
-                                            data-key="{{ item.key }}" data-type="props">
-                                            <text class="copy-icon">📋</text>
-                                        </view>
-                                        <text class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
-                                            item.key }}:</text>
+                    <view class="mpx-devtools-section">
+                        <view class="mpx-devtools-section__content">
+                            <mpx-devtools-data wx:if="{{ activeTab === 'props' }}"
+                                list="{{ currentComponentInfo.props }}" type="props" />
+                            <mpx-devtools-data wx:if="{{ activeTab === 'data' }}" list="{{ currentComponentInfo.data }}"
+                                type="data" />
+                            <mpx-devtools-data wx:if="{{ activeTab === 'computed' }}"
+                                list="{{ currentComponentInfo.computed }}" type="computed" />
 
-                                        <text class="property-value" style="color: {{ item.valueColor }}">{{
-                                            item.displayValue }}</text>
-
-                                    </view>
-                                    <view class="property-content expandable" wx:else>
-                                        <view class="expandable-header" bindtap="toggleObjectExpand"
-                                            data-path="{{ item.path }}" data-type="props">
-                                            <view class="copy-btn copy-btn-expandable" bindtap="copyPropertyValue"
-                                                data-value="{{ item.expandedValue }}" data-key="{{ item.key }}"
-                                                data-type="props" catchtap="preventToggle">
-                                                <text class="copy-icon">📋</text>
-                                            </view>
-                                            <text
-                                                class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
-                                                    item.key }}:</text>
-                                            <text class="expand-icon">{{ item.expanded ? '−' : '+' }}</text>
-
-                                            <text class="property-value" style="color: {{ item.valueColor }}">{{
-                                                item.collapsedValue }}</text>
-                                        </view>
-
-                                    </view>
-                                    <view wx:if="{{ item.expanded }}" class="expanded-content-wrapper">
-                                        <view bindtap="toggleObjectExpand" data-path="{{ item.path }}" data-type="props"
-                                            class="property-value" style="color: {{ item.valueColor }}">
-                                            {{ item.displayValue }}
-                                        </view>
-                                    </view>
-                                </view>
-                            </block>
-                            <text wx:else class="empty-text">无 Props 数据</text>
-                        </view>
-                    </view>
-
-                    <!-- Data 部分 -->
-                    <view class="section">
-                        <view class="section-header">
-                            <text class="section-title">Data ({{ currentComponentInfo.dataCount }})</text>
-                        </view>
-                        <view class="section-content">
-                            <block wx:if="{{ currentComponentInfo.data && currentComponentInfo.data.length > 0 }}">
-                                <view wx:for="{{ currentComponentInfo.data }}" wx:key="key" class="property-item">
-                                    <view class="property-content" wx:if="{{ !item.isExpandable }}">
-                                        <view class="copy-btn" bindtap="copyPropertyValue"
-                                            data-value="{{ item.expandedValue || item.displayValue }}"
-                                            data-key="{{ item.key }}" data-type="data">
-                                            <text class="copy-icon">📋</text>
-                                        </view>
-                                        <text class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
-                                            item.key }}:</text>
-
-                                        <text class="property-value" style="color: {{ item.valueColor }}">{{
-                                            item.displayValue }}</text>
-
-                                    </view>
-                                    <view class="property-content expandable" wx:else>
-                                        <view class="expandable-header" bindtap="toggleObjectExpand"
-                                            data-path="{{ item.path }}" data-type="data">
-                                            <text class="expand-icon">{{ item.expanded ? '−' : '+' }}</text>
-                                            <view class="copy-btn copy-btn-expandable" bindtap="copyPropertyValue"
-                                                data-value="{{ item.expandedValue }}" data-key="{{ item.key }}"
-                                                data-type="data" catchtap="preventToggle">
-                                                <text class="copy-icon">📋</text>
-                                            </view>
-                                            <text
-                                                class="property-key {{ item.isMatched ? 'matched-property-key' : '' }}">{{
-                                                    item.key }}:</text>
-                                            <text class="property-value" style="color: {{ item.valueColor }}">{{
-                                                item.collapsedValue }}</text>
-                                        </view>
-
-                                    </view>
-                                    <view wx:if="{{ item.expanded }}" class="expanded-content-wrapper">
-                                        <view bindtap="toggleObjectExpand" data-path="{{ item.path }}" data-type="data"
-                                            class="property-value" style="color: {{ item.valueColor }}">
-                                            {{ item.displayValue }}
-                                        </view>
-                                    </view>
-                                </view>
-                            </block>
-                            <text wx:else class="empty-text">无 Data 数据</text>
                         </view>
                     </view>
                 </view>
             </view>
         </view>
     </view>
-
 </template>
-
+<script type="application/json">
+{
+    "usingComponents": {
+        "mpx-devtool-tab": "./components/mpx-devtool-tab.mpx",
+        "mpx-devtools-data": "./components/mpx-devtools-data.mpx",
+    }
+}
+</script>
 <script>
-import { createComponent } from '@mpxjs/core'
+import mpx, { createComponent, ONHIDE, UNMOUNTED, BEFOREUNMOUNT,MOUNTED } from '@mpxjs/core'
 
 createComponent({
     data: {
@@ -223,8 +173,6 @@ createComponent({
         currentComponentInfo: null,
         filterText: '',
         rootInstance: null,
-        searchMode: 'component', // 'component' or 'data'
-        lastTapTime: 0,
         dataSearchResults: new Map(), // 存储数据搜索结果
         isCollapsed: false,
         // 拖拽相关数据
@@ -235,10 +183,61 @@ createComponent({
         dragStartPos: { x: 0, y: 0 },
         dragOffset: { x: 0, y: 0 },
         resizeStartPos: { x: 0, y: 0 },
-        resizeStartSize: { width: 0, height: 0 }
+        resizeStartSize: { width: 0, height: 0 },
+        activeTab: 'props',
+        showOsimEnvInput: process.env.VUE_APP_ENV === 'osim',
+        osimEnv: '',
+        osimEnvInput: '',
     },
 
     methods: {
+        clearTimer() {
+            if (this.timer) {
+                clearInterval(this.timer)
+                this.timer = null
+                console.debug('MPX DevTools timer cleared')
+            }
+            // 清理节流计时器
+            if (this._throttleTimer) {
+                clearTimeout(this._throttleTimer)
+                this._throttleTimer = null
+            }
+        },
+        onTabChange(data) {
+            const tab = data.detail?.activeTab;
+            this.activeTab = tab;
+        },
+        onOsimEnvInput(e) {
+            this.osimEnvInput = e.detail.value;
+        },
+        onOsimEnvInputBlur(e) {
+            const isValid = /[\d]+/.test(e.detail.value);
+            if (!isValid) {
+                mpx.showToast({
+                    title: '请输入正确的环境值',
+                    icon: 'none',
+                    duration: 1500
+                });
+                this.osimEnvInput = this.osimEnv;
+                return;
+            }
+        },
+        confirmOsimEnv() {
+            const isValid = /[\d]+/.test(this.osimEnvInput);
+            if (!isValid) {
+                mpx.showToast({
+                    title: '请输入正确的环境值',
+                    icon: 'none',
+                    duration: 1500
+                });
+                return;
+            }
+            this.osimEnv = this.osimEnvInput;
+            mpx.setStorage({
+                key: 'osimEnv',
+                data: this.osimEnv
+            });
+        },
         // 本地存储相关方法
         saveToStorage() {
             try {
@@ -247,7 +246,7 @@ createComponent({
                     dragPosition: this.dragPosition,
                     containerSize: this.containerSize
                 }
-                wx.setStorageSync('mpx-devtools-settings', JSON.stringify(storageData))
+                mpx.setStorageSync('mpx-devtools-settings', JSON.stringify(storageData))
             } catch (error) {
                 console.debug('Save storage failed:', error)
             }
@@ -255,7 +254,7 @@ createComponent({
 
         loadFromStorage() {
             try {
-                const storageData = wx.getStorageSync('mpx-devtools-settings')
+                const storageData = mpx.getStorageSync('mpx-devtools-settings')
                 if (storageData) {
                     const data = JSON.parse(storageData)
                     if (typeof data.isCollapsed === 'boolean') {
@@ -299,6 +298,19 @@ createComponent({
         onTouchMove(e) {
             if (!this.isDrageMove) return
 
+            // 尝试阻止默认滚动和事件冒泡，增加兼容性保护
+            try {
+                if (e && typeof e.preventDefault === 'function') {
+                    e.preventDefault()
+                }
+                if (e && e.stopPropagation && typeof e.stopPropagation === 'function') {
+                    e.stopPropagation()
+                }
+            } catch (err) {
+                // 某些小程序环境下事件对象可能不完全兼容，这里安全降级
+                // console.debug('preventDefault/stopPropagation not available', err)
+            }
+
             const touch = e.touches[0]
 
             // 节流处理，减少卡顿
@@ -322,7 +334,7 @@ createComponent({
                 }
             } else if (this.isDragging) {
                 // 拖拽逻辑
-                const systemInfo = wx.getSystemInfoSync()
+                const systemInfo = mpx.getWindowInfo()
                 const windowWidth = systemInfo.windowWidth
                 const windowHeight = systemInfo.windowHeight
 
@@ -331,10 +343,6 @@ createComponent({
 
                 let newX = this.dragPosition.x + (deltaX / windowWidth) * 100
                 let newY = this.dragPosition.y + (deltaY / windowHeight) * 100
-
-                // 边界限制
-                newX = Math.max(0, Math.min(70, newX))
-                newY = Math.max(0, Math.min(80, newY))
 
                 this.dragPosition = { x: newX, y: newY }
 
@@ -345,7 +353,17 @@ createComponent({
                 }
             }
         },
+        validatePosition() {
+            // 仅在悬浮模式下才需要校验位置
+            if (!this.isDrageMove) return
+            const isUnvisible = this.dragPosition.x < 0 || this.dragPosition.x > 100 || this.dragPosition.y < 0 || this.dragPosition.y > 100
+            if (isUnvisible) {
+                console.debug('Position out of bounds, resetting to center.')
+                this.dragPosition = { x: 10, y: 10 }
+                this.containerSize = { width: 400, height: 300 }
+            }
 
+        },
         onTouchEnd(e) {
             if (!this.isDrageMove) return
 
@@ -371,15 +389,18 @@ createComponent({
             this.isCollapsed = !this.isCollapsed;
             this.saveToStorage(); // 折叠状态改变时保存
         },
+
         updateComponentTree() {
             try {
-                // 检查 wx.mpxDevTools 是否可用
-                if (!wx.mpxDevTools || typeof wx.mpxDevTools.getInstanceTreeRoot !== 'function') {
-                    console.debug('MPX DevTools API not available yet')
+                if (!mpx.mpxDevTools || typeof mpx.mpxDevTools.getInstanceTreeRoot !== 'function') {
+                    mpx.showToast({
+                        title: 'MPX DevTools API 未就绪',
+                        icon: 'none'
+                    })
                     return
                 }
 
-                const tree = wx.mpxDevTools.getInstanceTreeRoot()
+                const tree = mpx.mpxDevTools.getInstanceTreeRoot()
 
                 // 检查是否获取到有效的组件树
                 if (!tree) {
@@ -387,15 +408,15 @@ createComponent({
                     return
                 }
 
-                wx.mpxDevToolsComponentRoot = tree
+                mpx.mpxDevToolsComponentRoot = tree
                 this.componentTree = tree
                 this.flattenTree = this.flattenTreeData(tree, 0, -1, [])
                 this.updateVisibleNodes()
                 this.updateTime = this.formatTime(new Date())
-                console.debug('Component tree updated successfully:', tree)
             } catch (error) {
                 console.debug('Error updating component tree:', error)
             }
+            this.validatePosition();
         },
 
         flattenTreeData(node, level, parentIndex = -1, allNodes = []) {
@@ -403,7 +424,10 @@ createComponent({
 
             try {
                 // 安全地获取文件路径
-                const fileSrc = node.component?.MpxDevtoolsComponentInfo?.data?.__mpx_file_src__ || 'unknown'
+                const fileSrc = node.component?.MpxDevtoolsComponentInfo?.__mpx_file_src__ || 'unknown'
+                if (fileSrc === 'unknown') {
+                    console.debug('Component with unknown fileSrc:', node)
+                }
                 const hasChildren = node.children && node.children.length > 0
 
                 const currentIndex = allNodes.length
@@ -434,9 +458,12 @@ createComponent({
         updateVisibleNodes() {
             const visible = []
 
-            // 如果是数据搜索模式，先执行数据搜索
-            if (this.searchMode === 'data' && this.filterText) {
-                this.performDataSearch()
+            // 如果有搜索条件，先执行数据搜索
+            if (this.filterText) {
+                this.performCombinedSearch()
+            } else {
+                // 清空搜索结果
+                this.dataSearchResults.clear()
             }
 
             for (let i = 0; i < this.flattenTree.length; i++) {
@@ -456,18 +483,16 @@ createComponent({
 
                 // 检查是否通过过滤条件
                 if (isVisible && this.filterText) {
-                    if (this.searchMode === 'component') {
-                        // 组件搜索模式
-                        const displayFileName = this.getDisplayFileName(node.fileSrc)
-                        if (!displayFileName.toLowerCase().includes(this.filterText.toLowerCase())) {
-                            isVisible = false
-                        }
-                    } else if (this.searchMode === 'data') {
-                        // 数据搜索模式：检查是否在搜索结果中
-                        const searchResult = this.dataSearchResults.get(node.fileSrc)
-                        if (!searchResult || !searchResult.isInPath) {
-                            isVisible = false
-                        }
+                    const displayFileName = this.getDisplayFileName(node.fileSrc)
+                    const componentMatched = displayFileName.toLowerCase().includes(this.filterText.toLowerCase())
+
+                    // 检查是否在数据搜索结果中
+                    const searchResult = this.dataSearchResults.get(node.fileSrc)
+                    const dataMatched = searchResult && searchResult.isInPath
+
+                    // 组件名称或数据值任一匹配即可显示
+                    if (!componentMatched && !dataMatched) {
+                        isVisible = false
                     }
                 }
 
@@ -516,17 +541,14 @@ createComponent({
             // 获取组件实例数据
             const componentInstance = this.getComponentInstance(node)
             if (!componentInstance) {
-                wx.showToast({
+                mpx.showToast({
                     title: '无法获取组件信息',
                     icon: 'none'
                 })
                 return
             }
 
-            console.log('Component instance:', componentInstance)
-
             const componentInfo = this.parseComponentInfo(componentInstance, node.fileSrc)
-
             // 保存组件实例引用，用于后续的展开操作
             this.currentComponentInfo = {
                 ...componentInfo,
@@ -537,12 +559,11 @@ createComponent({
 
         getComponentInstance(node) {
             // 根据组件树查找对应的组件实例
-            // 这里需要遍历组件树找到对应的组件
             try {
                 const findComponent = (treeNode, targetSrc) => {
                     if (!treeNode) return null
 
-                    const fileSrc = treeNode.component?.MpxDevtoolsComponentInfo?.data?.__mpx_file_src__
+                    const fileSrc = treeNode.component?.MpxDevtoolsComponentInfo?.__mpx_file_src__
                     if (fileSrc === targetSrc) {
                         return treeNode.component
                     }
@@ -605,7 +626,7 @@ createComponent({
 
                 // 检查是否匹配当前搜索条件
                 let isMatched = false
-                if (this.searchMode === 'data' && this.filterText) {
+                if (this.filterText) {
                     const searchText = this.filterText.toLowerCase()
                     isMatched = this.searchInValue(rawValue, searchText)
                 }
@@ -683,9 +704,8 @@ createComponent({
             }
         },
 
-        // 格式化 JSON 并添加正确的缩进（已弃用，使用 getFullFormattedValue 替代）
+        // 格式化 JSON 并添加正确的缩进
         formatJsonWithIndent(value) {
-            // 直接调用 getFullFormattedValue 以保持一致性
             return this.getFullFormattedValue(value)
         },
 
@@ -724,8 +744,6 @@ createComponent({
                 default: return '#333'
             }
         },
-
-
 
         toggleObjectExpand(e) {
             const path = e.currentTarget.dataset.path
@@ -782,11 +800,11 @@ createComponent({
             const { value, key, type } = e.currentTarget.dataset
 
             try {
-                // 在小程序中使用 wx.setClipboardData 来复制内容
-                wx.setClipboardData({
+                // 在小程序中使用 mpx.setClipboardData 来复制内容
+                mpx.setClipboardData({
                     data: value || '',
                     success: () => {
-                        wx.showToast({
+                        mpx.showToast({
                             title: `已复制${key}`,
                             icon: 'success',
                             duration: 1500
@@ -794,7 +812,7 @@ createComponent({
                     },
                     fail: (error) => {
                         console.error('复制失败:', error)
-                        wx.showToast({
+                        mpx.showToast({
                             title: '复制失败',
                             icon: 'none',
                             duration: 1500
@@ -803,7 +821,7 @@ createComponent({
                 })
             } catch (error) {
                 console.error('复制操作异常:', error)
-                wx.showToast({
+                mpx.showToast({
                     title: '复制功能不可用',
                     icon: 'none',
                     duration: 1500
@@ -837,18 +855,14 @@ createComponent({
         // 处理过滤输入
         onFilterInput(e) {
             this.filterText = e.detail.value
-            if (this.searchMode === 'data') {
-                this.dataSearchResults.clear()
-            }
+            this.dataSearchResults.clear()
             this.updateVisibleNodes()
         },
 
         // 处理确认输入
         onFilterConfirm(e) {
             this.filterText = e.detail.value
-            if (this.searchMode === 'data') {
-                this.dataSearchResults.clear()
-            }
+            this.dataSearchResults.clear()
             this.updateVisibleNodes()
         },
 
@@ -859,25 +873,8 @@ createComponent({
             this.updateVisibleNodes()
         },
 
-        // 处理输入框双击，切换搜索模式
-        onInputDoubleClick() {
-            const now = Date.now()
-            if (now - this.lastTapTime < 300) {
-                // 双击检测
-                this.searchMode = this.searchMode === 'component' ? 'data' : 'component'
-                this.dataSearchResults.clear()
-                this.updateVisibleNodes()
-                wx.showToast({
-                    title: this.searchMode === 'component' ? '切换到组件搜索' : '切换到数据搜索',
-                    icon: 'none',
-                    duration: 1000
-                })
-            }
-            this.lastTapTime = now
-        },
-
-        // 执行数据搜索
-        performDataSearch() {
+        // 执行组合搜索（同时搜索组件名称和数据值）
+        performCombinedSearch() {
             if (!this.filterText || !this.componentTree) {
                 this.dataSearchResults.clear()
                 return
@@ -891,7 +888,7 @@ createComponent({
                 if (!treeNode || !treeNode.component) return
 
                 const component = treeNode.component
-                const fileSrc = component.MpxDevtoolsComponentInfo?.data?.__mpx_file_src__
+                const fileSrc = component.MpxDevtoolsComponentInfo?.__mpx_file_src__
                 if (!fileSrc) return
 
                 const currentPath = [...path, fileSrc]
@@ -987,21 +984,21 @@ createComponent({
             return false
         }
     },
-    created() {
-        console.debug('MPX DevTools component mounted')
 
+    [MOUNTED]() {
+        console.debug('MPX DevTools component mounted')
+        this.osimEnv = mpx.getStorageSync('osimEnv') || '000'
+        this.osimEnvInput = this.osimEnv
         // 加载存储的设置
         this.loadFromStorage()
-
         // 延迟初始化，等待 MPX DevTools API 准备就绪
         const initDevTools = () => {
-            if (wx.mpxDevTools && typeof wx.mpxDevTools.getInstanceTreeRoot === 'function') {
+            if (mpx.mpxDevTools && typeof mpx.mpxDevTools.getInstanceTreeRoot === 'function') {
                 console.debug('MPX DevTools API is ready, initializing...')
                 this.updateComponentTree()
 
                 // 设置定时器，定期刷新组件树
                 this.timer = setInterval(() => {
-                    console.debug('Auto-refreshing component tree')
                     this.updateComponentTree()
                 }, 10000) // 每10秒自动刷新一次
             } else {
@@ -1014,20 +1011,32 @@ createComponent({
         // 立即尝试初始化
         initDevTools()
     },
-    beforeUnmount() {
-        // 清理定时器
-        if (this.timer) {
-            clearInterval(this.timer)
-            this.timer = null
-            console.debug('MPX DevTools timer cleared')
-        }
-        // 清理节流计时器
-        if (this._throttleTimer) {
-            clearTimeout(this._throttleTimer)
-            this._throttleTimer = null
-        }
+
+    [BEFOREUNMOUNT]() {
+        this.clearTimer()
+    },
+    [UNMOUNTED]() {
+        this.clearTimer()
+    },
+    [ONHIDE]() {
+        this.clearTimer()
+
+    },
+    watch: {
+        // 监听折叠状态变化，保存到存储
+        isCollapsed(newVal) {
+            this.osimEnvInput = this.osimEnv
+
+        },
     },
     computed: {
+        tabList() {
+            return [
+                { key: 'props', label: `Props (${this.currentComponentInfo ? this.currentComponentInfo.propsCount : 0})` },
+                { key: 'data', label: `Data (${this.currentComponentInfo ? this.currentComponentInfo.dataCount : 0})` },
+                { key: 'computed', label: `Computed (${this.currentComponentInfo ? this.currentComponentInfo.computedCount : 0})` },
+            ]
+        },
         visibleNodesWithDisplayName() {
             return this.visibleNodes.map(item => ({
                 ...item,
@@ -1039,66 +1048,71 @@ createComponent({
 </script>
 
 <style lang="stylus">
-.devtools-container-collapsed
+/* ==============================================
+1. 基础容器样式（根容器）
+============================================== */
+.mpx-devtools-container
+    padding 20rpx
+    background linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)
+    transition all 0.3s ease
+    display flex
+    flex-direction column
+
+/* 容器修改器：折叠状态 */
+.mpx-devtools-container--collapsed
     width max-content
     padding 0rpx !important
     height auto !important
     overflow scroll
+    max-width 360rpx
 
-.devtools-container
-    padding 20rpx
-    background linear-gradient(135deg, #faf8ff 0%, #f7f4ff 100%)
-    transition all 0.3s ease
-
-.devtools-floating
+/* 容器修改器：悬浮状态 */
+.mpx-devtools-container--floating
     position fixed
     z-index 1000
     box-shadow 0 8rpx 32rpx rgba(0, 0, 0, 0.2)
     border-radius 20rpx
     backdrop-filter blur(20rpx)
-    border 2rpx solid rgba(168, 181, 255, 0.3)
+    border 2rpx solid rgba(66, 153, 225, 0.3)
+    overflow hidden
 
-.devtools-container-collapsed
-    max-width 400rpx
-
-.copy-btn
-    margin-right 8rpx
-
-.header
-    background linear-gradient(135deg, #a8b5ff 0%, #b19cd9 100%)
-    padding 30rpx
+/* ==============================================
+2. 头部区域样式（Header）
+============================================== */
+.mpx-devtools-header
+    background linear-gradient(135deg, #4299e1 0%, #3182ce 100%)
+    padding 24rpx
     border-radius 16rpx
-    margin-bottom 24rpx
-    box-shadow 0 8rpx 32rpx rgba(168, 181, 255, 0.3)
+    box-shadow 0 8rpx 32rpx rgba(66, 153, 225, 0.3)
     color white
     transition all 0.3s ease
     position relative
 
-.header-collapsed
+/* 头部修改器：折叠状态 */
+.mpx-devtools-header--collapsed
     padding 20rpx 30rpx
     margin-bottom 0rpx
-    box-shadow 0 4rpx 16rpx rgba(168, 181, 255, 0.2)
+    box-shadow 0 4rpx 16rpx rgba(66, 153, 225, 0.2)
 
-.header-top
+/* 头部顶部容器（标题+状态区） */
+.mpx-devtools-header__top
     display flex
     justify-content space-between
     align-items center
-    margin-bottom 24rpx
     transition margin-bottom 0.3s ease
 
-.header-collapsed .header-top
+/* 折叠状态下的顶部容器 */
+.mpx-devtools-header--collapsed .mpx-devtools-header__top
     margin-bottom 0
 
-.devtools-main
-    overflow scroll
-    height 100%
-
-.title-section
+/* 标题区域 */
+.mpx-devtools-title-section
     flex 1
     min-width 0
     overflow hidden
 
-.title
+/* 标题文本 */
+.mpx-devtools-title
     font-size 36rpx
     font-weight 600
     color white
@@ -1110,27 +1124,26 @@ createComponent({
     overflow hidden
     text-overflow ellipsis
 
-.header-collapsed .title
+/* 折叠状态下的标题 */
+.mpx-devtools-header--collapsed .mpx-devtools-title
     font-size 28rpx
     margin-bottom 0
 
-.subtitle
-    font-size 24rpx
-    color rgba(255, 255, 255, 0.8)
-    display block
-
-.status-section
+/* 状态区域（刷新+折叠按钮） */
+.mpx-devtools-status-section
     display flex
     flex-direction column
     align-items flex-end
     gap 12rpx
 
-.header-collapsed .status-section
+/* 折叠状态下的状态区域 */
+.mpx-devtools-header--collapsed .mpx-devtools-status-section
     flex-direction row
     align-items center
     gap 0
 
-.drag-indicator
+/* 拖拽指示器 */
+.mpx-devtools-drag-indicator
     position absolute
     top 8rpx
     left 50%
@@ -1144,16 +1157,18 @@ createComponent({
     background rgba(255, 255, 255, 0.4)
     cursor grab
 
-.drag-indicator:active
+.mpx-devtools-drag-indicator:active
     cursor grabbing
 
-.drag-icon
+/* 拖拽图标 */
+.mpx-devtools-drag-icon
     font-size 16rpx
     color rgba(255, 255, 255, 0.8)
     line-height 1
     letter-spacing 2rpx
 
-.update-time
+/* 刷新按钮文本 */
+.mpx-devtools-update-time
     font-size 22rpx
     color rgba(255, 255, 255, 0.9)
     background rgba(255, 255, 255, 0.15)
@@ -1161,7 +1176,8 @@ createComponent({
     border-radius 20rpx
     backdrop-filter blur(10rpx)
 
-.collapse-toggle-btn
+/* 折叠按钮 */
+.mpx-devtools-collapse-btn
     display flex
     align-items center
     gap 8rpx
@@ -1174,91 +1190,49 @@ createComponent({
     transition all 0.3s ease
     cursor pointer
 
-.collapse-toggle-btn:active
+.mpx-devtools-collapse-btn:active
     transform scale(0.95)
     background rgba(255, 255, 255, 0.3)
 
-.collapse-toggle-icon
+/* 折叠按钮图标 */
+.mpx-devtools-collapse-btn__icon
     font-size 24rpx
     line-height 1
     transition transform 0.3s ease
 
-.collapse-toggle-text
+/* 折叠按钮文本 */
+.mpx-devtools-collapse-btn__text
     font-size 22rpx
     color rgba(255, 255, 255, 0.95)
     font-weight 500
 
-.refresh-btn
-    display flex
-    align-items center
-    gap 6rpx
-    background rgba(255, 255, 255, 0.2)
-    border none
-    border-radius 24rpx
-    padding 10rpx 16rpx
-    color white
-    font-size 24rpx
-    transition all 0.3s ease
-    backdrop-filter blur(10rpx)
-    border 1rpx solid rgba(255, 255, 255, 0.3)
-
-.refresh-btn::after
-    border none
-    background none
-
-.refresh-btn:active
-    transform scale(0.95)
-    background rgba(255, 255, 255, 0.3)
-
-.refresh-icon
-    font-size 28rpx
-    line-height 1
-
-.refresh-text
-    font-size 24rpx
-    font-weight 500
-
-.filter-container
+/* ==============================================
+3. 过滤区域样式（Filter）
+============================================== */
+.mpx-devtools-filter-container
     background rgba(255, 255, 255, 0.15)
-    border-radius 12rpx
-    padding 16rpx
+    border-radius 4rpx
+    padding 16rpx 0
     backdrop-filter blur(10rpx)
     border 1rpx solid rgba(255, 255, 255, 0.2)
 
-.filter-wrapper-data
-    background rgba(255, 255, 255, 0.3) !important
-
-.search-mode-indicator
-    display flex
-    justify-content space-between
-    align-items center
-    margin-bottom 12rpx
-    padding 0 8rpx
-
-.mode-text
-    font-size 24rpx
-    color rgba(255, 255, 255, 0.9)
-    font-weight 500
-
-.mode-hint
-    font-size 20rpx
-    color rgba(255, 255, 255, 0.7)
-    font-style italic
-
-.filter-wrapper
+/* 过滤输入容器 */
+.mpx-devtools-filter-wrapper
     display flex
     align-items center
     background rgba(255, 255, 255, 0.9)
-    border-radius 28rpx
+    border-radius 18rpx
     padding 4rpx 8rpx 4rpx 16rpx
     box-shadow 0 4rpx 16rpx rgba(0, 0, 0, 0.1)
 
-.filter-icon
+/* 过滤图标 */
+.mpx-devtools-filter-wrapper__icon
     font-size 28rpx
     margin-right 12rpx
     color #666
 
-.filter-input
+/* 过滤输入框 */
+.mpx-devtools-filter-wrapper__input
     flex 1
     height 48rpx
     padding 0 12rpx
@@ -1268,10 +1242,11 @@ createComponent({
     color #333
     outline none
 
-.filter-input::placeholder
+.mpx-devtools-filter-wrapper__input::placeholder
     color #999
 
-.clear-btn
+/* 过滤清除按钮 */
+.mpx-devtools-filter-wrapper__clear-btn
     width 36rpx
     height 36rpx
     display flex
@@ -1283,113 +1258,131 @@ createComponent({
     flex-shrink 0
     transition all 0.3s ease
 
-.clear-btn:active
+.mpx-devtools-filter-wrapper__clear-btn:active
     background rgba(0, 0, 0, 0.2)
     transform scale(0.9)
 
-.clear-icon
+/* 清除按钮图标 */
+.mpx-devtools-filter-wrapper__clear-icon
     font-size 20rpx
     color #666
     line-height 1
     font-weight bold
 
-.tree-container
-    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+/* ==============================================
+4. 主体内容区样式（Main）
+============================================== */
+.mpx-devtools-main
+    height 100%
+    overflow hidden
+
+/* 组件树容器 */
+.mpx-devtools-tree-container
+    background linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)
     border-radius 16rpx
     padding 20rpx
-    box-shadow 0 4rpx 20rpx rgba(168, 181, 255, 0.15)
-    border 2rpx solid rgba(168, 181, 255, 0.2)
-    height 500rpx
+    box-shadow 0 4rpx 20rpx rgba(66, 153, 225, 0.15)
+    border 2rpx solid rgba(66, 153, 225, 0.2)
     overflow scroll
-
-.devtools-floating .tree-container
     height 100%
 
-.empty-state
-    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+/* 空状态（无组件数据） */
+.mpx-devtools-empty-state
+    background linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)
     border-radius 8rpx
     padding 10rpx 5rpx
     text-align center
-    border 2rpx dashed rgba(168, 181, 255, 0.4)
+    border 2rpx dashed rgba(66, 153, 225, 0.4)
     margin-top 10rpx
 
-.empty-text
-    font-size 20rpx
-    color #7c3aed
+/* 空状态文本 */
+.mpx-devtools-empty-state__text
+    font-size 30rpx
+    color #2d74d8
     font-weight 400
     display block
     margin-bottom 2rpx
 
-.empty-hint
+/* 空状态提示 */
+.mpx-devtools-empty-state__hint
     font-size 26rpx
-    color #a855f7
+    color #4299e1
     display block
     opacity 0.8
 
-.tree-node
+/* ==============================================
+5. 树节点样式（Tree Node）
+============================================== */
+.mpx-devtools-tree-node
     padding 12rpx 0
-    border-bottom 1rpx solid rgba(168, 181, 255, 0.15)
+    border-bottom 1rpx solid rgba(66, 153, 225, 0.15)
     white-space nowrap
     display inline-block
     min-width 100%
     width max-content
 
-.tree-node:last-child
+.mpx-devtools-tree-node:last-child
     border-bottom none
 
-.node-content
+/* 节点内容容器 */
+.mpx-devtools-tree-node__content
     display inline-flex
     align-items center
     min-width 100%
     width max-content
 
-.collapse-btn
+/* 节点折叠按钮 */
+.mpx-devtools-tree-node__collapse-btn
     width 40rpx
     height 40rpx
     display flex
     align-items center
     justify-content center
     margin-right 10rpx
-    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
-    border 1rpx solid rgba(168, 181, 255, 0.3)
+    background linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%)
+    border 1rpx solid rgba(66, 153, 225, 0.3)
     border-radius 50%
     flex-shrink 0
     transition all 0.3s ease
 
-.collapse-btn:active
+.mpx-devtools-tree-node__collapse-btn:active
     transform scale(0.95)
-    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+    background linear-gradient(135deg, #dbeafe 0%, #e6f3ff 100%)
 
-.collapse-icon
+/* 折叠按钮图标 */
+.mpx-devtools-tree-node__collapse-icon
     font-size 24rpx
-    color #7c3aed
+    color #2d74d8
     font-weight bold
     line-height 1
 
-.info-btn
+/* 节点信息按钮 */
+.mpx-devtools-tree-node__info-btn
     width 40rpx
     height 40rpx
     display flex
     align-items center
     justify-content center
     margin-right 10rpx
-    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
-    border 1rpx solid rgba(168, 181, 255, 0.3)
+    background linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%)
+    border 1rpx solid rgba(66, 153, 225, 0.3)
     border-radius 50%
     flex-shrink 0
     transition all 0.3s ease
 
-.info-btn:active
+.mpx-devtools-tree-node__info-btn:active
     transform scale(0.95)
-    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+    background linear-gradient(135deg, #dbeafe 0%, #e6f3ff 100%)
 
-.info-icon
+/* 信息按钮图标 */
+.mpx-devtools-tree-node__info-icon
     font-size 24rpx
-    color #7c3aed
+    color #2d74d8
     font-weight bold
     line-height 1
 
-.file-src-container
+/* 节点文件容器 */
+.mpx-devtools-tree-node__file-container
     flex-shrink 0
     white-space nowrap
     flex 1
@@ -1397,27 +1390,31 @@ createComponent({
     flex-direction column
     align-items flex-start
 
-.node-text
+/* 节点文本 */
+.mpx-devtools-tree-node__text
     font-size 26rpx
-    color #5b21b6
+    color #2c5282
     font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
     white-space nowrap
     font-weight 500
-    text-shadow 0 1rpx 2rpx rgba(168, 181, 255, 0.1)
+    text-shadow 0 1rpx 2rpx rgba(66, 153, 225, 0.1)
     transition color 0.3s ease
 
-.node-text.highlighted
+/* 节点文本修改器：高亮（搜索匹配） */
+.mpx-devtools-tree-node__text--highlighted
     color #dc2626
     font-weight 600
     text-shadow 0 1rpx 2rpx rgba(220, 38, 38, 0.2)
 
-.matched-properties
+/* 匹配属性容器 */
+.mpx-devtools-tree-node__matched-properties
     display flex
     flex-wrap wrap
     margin-top 6rpx
     gap 8rpx
 
-.matched-prop
+/* 匹配属性文本 */
+.mpx-devtools-tree-node__matched-prop
     font-size 20rpx
     color #dc2626
     background rgba(220, 38, 38, 0.1)
@@ -1427,8 +1424,11 @@ createComponent({
     font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
     font-weight 500
 
-// 弹窗样式
-.modal-overlay
+/* ==============================================
+6. 弹窗样式（Modal）
+============================================== */
+/* 弹窗遮罩 */
+.mpx-devtools-modal-overlay
     position fixed
     top 0
     left 0
@@ -1440,222 +1440,138 @@ createComponent({
     align-items center
     justify-content center
 
-.info-modal
+/* 弹窗容器 */
+.mpx-devtools-modal
     background-color #fff
     border-radius 20rpx
     width 90%
     max-width 700rpx
-    max-height 80vh
+    max-height 60vh
     overflow hidden
     z-index 99999
     box-shadow 0 10rpx 30rpx rgba(0, 0, 0, 0.3)
 
-.modal-header
-    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+/* 弹窗头部 */
+.mpx-devtools-modal__header
+    background linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)
     padding 30rpx
-    border-bottom 2rpx solid rgba(168, 181, 255, 0.2)
+    border-bottom 2rpx solid rgba(66, 153, 225, 0.2)
     display flex
     justify-content space-between
     align-items center
 
-.modal-title
+/* 弹窗标题 */
+.mpx-devtools-modal__title
     font-size 32rpx
     font-weight 600
-    color #5b21b6
+    color #2c5282
 
-.close-btn
+/* 弹窗关闭按钮 */
+.mpx-devtools-modal__close-btn
     width 50rpx
     height 50rpx
     display flex
     align-items center
     justify-content center
-    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
-    border 1rpx solid rgba(168, 181, 255, 0.3)
+    background linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%)
+    border 1rpx solid rgba(66, 153, 225, 0.3)
     border-radius 50%
     transition all 0.3s ease
 
-.close-btn:active
+.mpx-devtools-modal__close-btn:active
     transform scale(0.95)
-    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
+    background linear-gradient(135deg, #dbeafe 0%, #e6f3ff 100%)
 
-.close-icon
+/* 关闭按钮图标 */
+.mpx-devtools-modal__close-icon
     font-size 40rpx
-    color #7c3aed
+    padding-bottom 8rpx
+    color #2d74d8
     line-height 1
 
-.modal-content
+/* 弹窗内容 */
+.mpx-devtools-modal__content
     padding 30rpx
     max-height 60vh
-    overflow-y auto
 
-.component-path
+/* 组件路径容器 */
+.mpx-devtools-component-path
     margin-bottom 30rpx
+    display flex
+    align-items center
     padding 20rpx
-    background linear-gradient(135deg, #f8f6ff 0%, #f3f0ff 100%)
+    background linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)
     border-radius 12rpx
-    border 1rpx solid rgba(168, 181, 255, 0.2)
+    border 1rpx solid rgba(66, 153, 225, 0.2)
 
-.path-label
+/* 路径标签 */
+.mpx-devtools-component-path__label
     font-size 24rpx
-    color #7c3aed
+    color #2d74d8
     margin-right 10rpx
+    white-space nowrap
     font-weight 500
 
-.path-text
+/* 路径文本 */
+.mpx-devtools-component-path__text
     font-size 24rpx
-    color #5b21b6
+    color #2c5282
     font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
     word-break break-all
     font-weight 500
 
-.section
+/* ==============================================
+7. 弹窗Section样式（Props/Data区域）
+============================================== */
+.mpx-devtools-section
     margin-bottom 30rpx
+    overflow-y auto
+    height 35vh
 
-.section-header
+/* Section头部 */
+.mpx-devtools-section__header
     margin-bottom 20rpx
     padding-bottom 10rpx
-    border-bottom 2rpx solid rgba(168, 181, 255, 0.2)
+    border-bottom 2rpx solid rgba(66, 153, 225, 0.2)
 
-.section-title
+/* Section标题 */
+.mpx-devtools-section__title
     font-size 28rpx
     font-weight 600
-    color #7c3aed
+    color #2d74d8
 
-.section-content
-    background linear-gradient(135deg, #fefcff 0%, #fdfbff 100%)
+/* Section内容 */
+.mpx-devtools-section__content
+    background linear-gradient(135deg, #fdfeff 0%, #f8fcff 100%)
     border-radius 12rpx
     padding 24rpx
-    border 1rpx solid rgba(168, 181, 255, 0.2)
+    border 1rpx solid rgba(66, 153, 225, 0.2)
 
-.property-item
-    margin-bottom 16rpx
-    border-radius 6rpx
-    transition background-color 0.2s ease
-
-.property-item:last-child
-    margin-bottom 0
-
-.property-item:hover
-    background-color rgba(248, 249, 250, 0.5)
-
-.property-content
-    display flex
-    align-items flex-start
-    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
-    font-size 24rpx
-    margin-bottom 8rpx
-    padding 8rpx 0
-    position relative
-
-.property-content:not(.expandable) .property-value
-    background-color rgba(248, 249, 250, 0.3)
-    padding 4rpx 8rpx
-    border-radius 4rpx
-    border 1rpx solid rgba(230, 230, 230, 0.3)
-    box-shadow 0 1rpx 3rpx rgba(0, 0, 0, 0.03)
-    margin-top 0
-    margin-left 8rpx
-    flex 1
-
-.property-content.expandable
-    flex-direction column
-    align-items stretch
-
-.expandable-header
-    display flex
-    align-items center
+/* ==============================================
+9. 复制按钮样式（Copy Btn）
+============================================== */
+.mpx-devtools-copy-btn
+    margin-right 8rpx
     cursor pointer
-    padding 5rpx 0
-    width 100%
-    min-height 40rpx
 
-.expand-icon
-    width 30rpx
-    height 30rpx
-    font-size 20rpx
-    color #666
-    margin-right 10rpx
-    text-align center
-    font-weight bold
-    transition color 0.3s ease
-    display flex
-    align-items center
-    justify-content center
-    background-color rgba(230, 230, 230, 0.3)
-    border-radius 4rpx
-    flex-shrink 0
+/* 复制按钮修改器：可展开属性中 */
+.mpx-devtools-copy-btn--expandable
+    margin-right 12rpx
 
-.expandable-header:hover .expand-icon
-    color #1890ff
-    background-color rgba(24, 144, 255, 0.1)
-
-.expandable-header:active .expand-icon
-    transform scale(0.95)
-    transition transform 0.1s ease
-
-.property-key
-    color #0366d6
-    margin-right 15rpx
-    font-weight 500
-    min-width 200rpx
-    flex-shrink 0
-    display inline-block
-    transition color 0.3s ease
-
-.property-key.matched-property-key
-    color #dc2626
-    font-weight 600
-    text-shadow 0 1rpx 2rpx rgba(220, 38, 38, 0.2)
-    background rgba(220, 38, 38, 0.1)
-    padding 4rpx 8rpx
-    border-radius 4rpx
-    border 1rpx solid rgba(220, 38, 38, 0.2)
-
-.property-value
-    color #333
-    word-break break-all
-    flex 1
-    white-space pre-wrap // 保持空格和换行符
-    font-family 'Monaco', 'Menlo', 'Ubuntu Mono', monospace
-    line-height 1.4
-    max-height 400rpx
-    overflow-y auto
-    background-color rgba(248, 249, 250, 0.8)
-    padding 12rpx 16rpx
-    border-radius 8rpx
-    margin-top 8rpx
-    border 1rpx solid rgba(230, 230, 230, 0.6)
-    box-shadow 0 2rpx 8rpx rgba(0, 0, 0, 0.05), 0 1rpx 2rpx rgba(0, 0, 0, 0.1)
-    position relative
-
-.property-type
-    color #6f42c1
-    font-style italic
-    margin-left 10rpx
-
-.expanded-content
-    margin-left 40rpx
-    margin-top 10rpx
-    padding-left 20rpx
-    border-left 2rpx solid #e1e4e8
-
-.nested-property
-    display flex
-    align-items flex-start
-    margin-bottom 10rpx
+/* 复制按钮图标 */
+.mpx-devtools-copy-btn__icon
     font-size 22rpx
-
-.nested-property:last-child
-    margin-bottom 0
-
-.empty-text
     color #666
-    font-style italic
-    text-align center
-    padding 20rpx 0
+    cursor pointer
+    transition color 0.3s ease
 
-// 拉伸控制器样式
-.resize-controls
+.mpx-devtools-copy-btn:hover .mpx-devtools-copy-btn__icon
+    color #1890ff
+
+/* ==============================================
+10. 拉伸控制器样式（Resize）
+============================================== */
+.mpx-devtools-resize-controls
     position absolute
     width 100%
     height 100%
@@ -1663,12 +1579,13 @@ createComponent({
     top 0
     left 0
 
-.resize-handle
+/* 拉伸手柄 */
+.mpx-devtools-resize-handle
     position absolute
     width 50rpx
     height 50rpx
-    background linear-gradient(135deg, #e8e6ff 0%, #f0eeff 100%)
-    border 2rpx solid rgba(168, 181, 255, 0.5)
+    background linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%)
+    border 2rpx solid rgba(66, 153, 225, 0.5)
     border-radius 50%
     display flex
     align-items center
@@ -1678,26 +1595,100 @@ createComponent({
     transition all 0.3s ease
     z-index 10
 
-.resize-handle:active
+.mpx-devtools-resize-handle:active
     transform scale(1.1)
-    background linear-gradient(135deg, #ddd9ff 0%, #e5e3ff 100%)
-    border-color rgba(168, 181, 255, 0.8)
+    background linear-gradient(135deg, #dbeafe 0%, #e6f3ff 100%)
+    border-color rgba(66, 153, 225, 0.8)
 
-.resize-handle-br
+/* 拉伸手柄修改器：右下角 */
+.mpx-devtools-resize-handle--br
     bottom -5rpx
     right -5rpx
 
-.resize-handle-bl
-    bottom -5rpx
-    left -5rpx
-
-.resize-icon
+/* 拉伸图标 */
+.mpx-devtools-resize-handle__icon
     font-size 20rpx
-    color #7c3aed
+    color #2d74d8
     font-weight bold
     line-height 1
 
-// 悬浮模式优化
-.devtools-floating
-    overflow hidden
+/* ==============================================
+11. 环境设置区域样式（Env）
+============================================== */
+.mpx-devtools-env
+    display flex
+    flex-wrap nowrap
+    align-items center
+    gap 12rpx
+    padding 5rpx 10rpx
+    background rgba(255, 255, 255, 0.04)
+    border-radius 12rpx
+    margin-top 12rpx
+    border 1rpx solid rgba(255, 255, 255, 0.06)
+
+.mpx-devtools-env__label
+    font-size 28rpx
+    margin-left 5rpx
+    display flex
+    align-items center
+
+.mpx-devtools-env__controls
+    display flex
+    flex 1
+    align-items center
+
+/* 优化环境输入控件：输入框和按钮 */
+.mpx-devtools-env__input
+    height 50rpx
+    min-width 160rpx
+    width 40%
+    padding 0 14rpx
+    font-size 26rpx
+    border-radius 8rpx
+    border 1rpx solid rgba(66, 153, 225, 0.12)
+    background rgba(240, 240, 240, 0.95)
+    color #222
+    outline none
+    margin 0 20rpx 0 10rpx
+    transition all 0.18s ease
+    box-shadow 0 2rpx 6rpx rgba(0, 0, 0, 0.04)
+
+.mpx-devtools-env__input:focus
+    border-color rgba(66, 153, 225, 0.28)
+    box-shadow 0 4rpx 12rpx rgba(66, 153, 225, 0.08)
+
+.mpx-devtools-env__btn
+    height 56rpx
+    margin-left 12rpx
+    border-radius 10rpx
+    background linear-gradient(135deg, #38a3f5 0%, #2b82d6 100%)
+    color #fff
+    font-size 26rpx
+    font-weight 600
+    display flex
+    justify-content center
+    align-items center
+    margin-bottom 8rpx
+    border none
+    box-shadow 0 6rpx 18rpx rgba(43, 130, 214, 0.22)
+    cursor pointer
+    transition transform 0.14s ease, box-shadow 0.14s ease, opacity 0.14s ease
+
+.mpx-devtools-env__btn:active
+    transform translateY(1rpx) scale(0.995)
+    box-shadow 0 4rpx 12rpx rgba(43, 130, 214, 0.18)
+
+/* 在小尺寸容器中允许换行显示，避免溢出 */
+@media (max-width 420px)
+    .mpx-devtools-env
+        flex-wrap wrap
+
+    .mpx-devtools-env__input
+        width 100%
+        min-width 0
+
+    .mpx-devtools-env__btn
+        width 100%
+        margin-left 0
+        margin-top 8rpx
 </style>

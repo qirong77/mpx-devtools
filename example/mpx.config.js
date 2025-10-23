@@ -1,4 +1,6 @@
 const { defineConfig } = require('@vue/cli-service')
+const path = require('path')
+
 module.exports = defineConfig({
   outputDir: `dist/${process.env.MPX_CURRENT_TARGET_MODE}`,
   pluginOptions: {
@@ -21,5 +23,16 @@ module.exports = defineConfig({
    * 如果希望node_modules下的文件时对应的缓存可以失效，
    * 可以将configureWebpack.snap.managedPaths修改为 []
    */
-  configureWebpack(config) {}
+  configureWebpack(config) {
+        // 添加自定义 loader 来处理 MPX 文件
+    config.module.rules.push({
+      test: /\.mpx$/,
+      use: [
+        {
+          loader: path.resolve(__dirname, 'src/loader.js')
+        },
+      ],
+      enforce: 'pre' // 在其他 loader 之前执行
+    })
+  }
 })

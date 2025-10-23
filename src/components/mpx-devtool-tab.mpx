@@ -1,0 +1,162 @@
+<template>
+    <view class="mpx-devtools-tab">
+        <!-- Tab切换区域 -->
+        <view class="mpx-devtools-tab__header">
+            <view class="mpx-devtools-tab__nav">
+                <view wx:for="{{ tabList }}"
+                    class="mpx-devtools-tab__nav-item {{ activeTab === item.key ? 'mpx-devtools-tab__nav-item--active' : '' }}"
+                    bindtap="switchTab" data-tab="{{ item.key }}">
+                    <text class="mpx-devtools-tab__nav-text">{{ item.label }}</text>
+                </view>
+            </view>
+        </view>
+
+        <!-- Tab内容区域 -->
+        <view class="mpx-devtools-tab__content">
+            <slot></slot>
+        </view>
+    </view>
+</template>
+
+<script>
+import { createComponent } from '@mpxjs/core'
+
+createComponent({
+    props: {
+        tabList: {
+            type: Array,
+            value: [{
+                key: 'props',
+                label: 'Props',
+                data: {}
+            }, {
+                key: 'data',
+                label: 'Data',
+                data: {}
+            }]
+        },
+        activeTab: {
+            type: String,
+            value: 'props'
+        },
+        onTabChange: {
+            type: Function,
+            value: null
+        }
+    },
+
+
+    methods: {
+        // 切换Tab
+        switchTab(e) {
+            this.triggerEvent('tabchange', { activeTab: e.currentTarget.dataset.tab })
+        }
+    }
+})
+</script>
+
+<style lang="stylus">
+/* ==============================================
+   Tab组件样式
+============================================== */
+.mpx-devtools-tab
+    height 100%
+    margin-top 20rpx
+    display flex
+    flex-direction column
+
+/* ==============================================
+   Tab头部样式
+============================================== */
+.mpx-devtools-tab__header
+    flex-shrink 0
+    background linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)
+    border-radius 12rpx 12rpx 0 0
+    border 1rpx solid rgba(66, 153, 225, 0.2)
+    border-bottom none
+
+/* Tab导航容器 */
+.mpx-devtools-tab__nav
+    display flex
+    height 80rpx
+
+/* Tab导航项 */
+.mpx-devtools-tab__nav-item
+    flex 1
+    display flex
+    align-items center
+    justify-content center
+    position relative
+    cursor pointer
+    transition all 0.3s ease
+    background rgba(255, 255, 255, 0.3)
+    border-right 1rpx solid rgba(66, 153, 225, 0.2)
+
+.mpx-devtools-tab__nav-item:last-child
+    border-right none
+
+.mpx-devtools-tab__nav-item:first-child
+    border-radius 12rpx 0 0 0
+
+.mpx-devtools-tab__nav-item:last-child
+    border-radius 0 12rpx 0 0
+
+/* Tab导航项：激活状态 */
+.mpx-devtools-tab__nav-item--active
+    background linear-gradient(135deg, #4299e1 0%, #3182ce 100%)
+    color white
+    box-shadow 0 4rpx 16rpx rgba(66, 153, 225, 0.3)
+
+.mpx-devtools-tab__nav-item--active::after
+    content ''
+    position absolute
+    bottom 0
+    left 0
+    right 0
+    height 4rpx
+    background linear-gradient(90deg, #63b3ed 0%, #4299e1 100%)
+
+/* Tab导航项：hover状态 */
+.mpx-devtools-tab__nav-item:not(.mpx-devtools-tab__nav-item--active):hover
+    background rgba(66, 153, 225, 0.1)
+
+/* Tab导航项：active状态 */
+.mpx-devtools-tab__nav-item:active
+    transform scale(0.98)
+
+/* Tab导航文本 */
+.mpx-devtools-tab__nav-text
+    font-size 26rpx
+    font-weight 500
+    transition color 0.3s ease
+
+.mpx-devtools-tab__nav-item--active .mpx-devtools-tab__nav-text
+    color white
+    font-weight 600
+
+.mpx-devtools-tab__nav-item:not(.mpx-devtools-tab__nav-item--active) .mpx-devtools-tab__nav-text
+    color #2d74d8
+
+/* ==============================================
+   Tab内容区域样式
+============================================== */
+.mpx-devtools-tab__content
+    flex 1
+    overflow hidden
+    background white
+    border 1rpx solid rgba(66, 153, 225, 0.2)
+    border-top none
+    border-radius 0 0 12rpx 12rpx
+    padding 20rpx
+    position relative
+
+/* 内容区域滚动 */
+.mpx-devtools-tab__content::before
+    content ''
+    position absolute
+    top 0
+    left 0
+    right 0
+    height 1rpx
+    background linear-gradient(90deg, transparent 0%, rgba(66, 153, 225, 0.3) 20%, rgba(66, 153, 225, 0.3) 80%, transparent 100%)
+</style>

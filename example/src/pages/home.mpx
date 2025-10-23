@@ -96,6 +96,8 @@ createPage({
   },
 
   onLoad() {
+    console.debug('Home page loaded')
+    console.log(this.$refs)
     this.getPlatformInfo()
   },
 
