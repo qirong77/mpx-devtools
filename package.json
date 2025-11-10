@@ -1,6 +1,6 @@
 {
   "name": "mpx-devtools",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "滴滴跨端框架 MPX 的 Devtools，可视化查看、修改组件树的数据",
   "files": [
     "src",
