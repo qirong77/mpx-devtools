@@ -94,7 +94,7 @@
                     <!-- 空状态（无组件数据时显示） -->
                     <view wx:else class="mpx-devtools-empty-state">
                         <text class="mpx-devtools-empty-state__text">暂无组件数据</text>
-                        <text class="mpx-devtools-empty-state__hint">请点击右上角刷新按钮获取最新组件树<br />或修改过滤条件</text>
+                        <text class="mpx-devtools-empty-state__hint">请点击右上角刷新按钮获取最新组件树或修改过滤条件</text>
                     </view>
                 </view>
             </view>
