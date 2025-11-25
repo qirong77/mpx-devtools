@@ -8,13 +8,15 @@ import mpx from "@mpxjs/core";
 class MPXDevTools {
   constructor() {
     this.instanceMapSet = new WeakSet(); // 存储组件实例和其信息的映射
+    this.instanceMap = {}
     this.rootInstance = []; // 根组件实例
     this.exposeGlobalMethods();
   }
   onComponentMounted(instance) {
     this.instanceMapSet.add(instance);
     instance.MpxDevtoolsComponentInfo = new MpxDevtoolsComponentInfo(instance);
-
+    const src = instance.MpxDevtoolsComponentInfo.__mpx_file_src__ || '未知组件';
+    this.instanceMap[src] = instance;
     const parent = findParentComponent(instance);
     if (parent) {
       // 将当前实例添加到父组件的子组件列表中
@@ -34,6 +36,8 @@ class MPXDevTools {
     }
   }
   onComponentUnmounted(instance) {
+    const src = instance.MpxDevtoolsComponentInfo?.__mpx_file_src__ || '未知组件';
+    delete this.instanceMap[src];
     if (this.instanceMapSet.has(instance)) {
       this.instanceMapSet.delete(instance);
 
@@ -64,6 +68,7 @@ class MPXDevTools {
     }
   }
   exposeGlobalMethods() {
+    const that = this;
     mpx.mpxDevTools = {
       getinstanceMapSet: () => this.instanceMapSet,
       getRoot: () => {
@@ -76,6 +81,9 @@ class MPXDevTools {
         });
         this.rootInstance = roots;
         return roots;
+      },
+      getInstanceBySrc(src='') {
+        return this
       },
       getInstanceTreeRoot() {
         const roots = mpx.mpxDevTools.getRoot();
