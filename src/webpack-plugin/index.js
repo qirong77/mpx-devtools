@@ -1,47 +1,43 @@
 const path = require("path");
 
 class MpxDevtoolsWebpackPlugin {
-  constructor(options = {}) {
-    this.options = options;
-    this.pluginName = "MpxDevtoolsWebpackPlugin";
-  }
+    constructor(options = {}) {
+        this.options = options;
+        this.pluginName = "MpxDevtoolsWebpackPlugin";
+    }
 
-  apply(compiler) {
-    const target = process.env.MPX_CURRENT_TARGET_MODE;
-    if (target === "web") {
-      console.log(`[MpxDevtoolsWebpackPlugin] Skipped for target: ${target}`);
-      return;
-    }
-    const loaderPath = 'mpx-devtools/src/webpack-plugin/loader/mpx-devtools-source-loader.js'
-    compiler.options.module.rules.push({
-      test: /\.mpx$/,
-      use: [{ loader: loaderPath }],
-      enforce: "pre",
-    });
-    if (compiler.hooks && compiler.hooks.normalModuleFactory) {
-      compiler.hooks.normalModuleFactory.tap(this.pluginName, (nmf) => {
-        nmf.hooks.afterResolve.tap(this.pluginName, (resolveData) => {
-          if (!resolveData) return;
-          const resource =
-            resolveData.resource ||
-            (resolveData.resourceResolveData &&
-              resolveData.resourceResolveData.path);
-          if (resource && /\.mpx$/.test(resource)) {
-            resolveData.loaders = resolveData.loaders || [];
-            const already = resolveData.loaders.some(
-              (l) =>
-                l &&
-                (l.loader || l) &&
-                path.resolve(l.loader || l) === loaderPath
-            );
-            if (!already) {
-              resolveData.loaders.unshift({ loader: loaderPath });
-            }
-          }
+    apply(compiler) {
+        const target = process.env.MPX_CURRENT_TARGET_MODE;
+        if (target === "web") {
+            console.log(`[MpxDevtoolsWebpackPlugin] Skipped for target: ${target}`);
+            return;
+        }
+        if (target !== "wx") {
+            console.log(`[MpxDevtoolsWebpackPlugin] 由于作者比较忙，devtools暂时只支持微信小程序，跳过此次编译。当前target: ${target}`);
+            return;
+        }
+        const loaderPath = "mpx-devtools/src/webpack-plugin/loader/mpx-devtools-source-loader.js";
+        compiler.options.module.rules.push({
+            test: /\.mpx$/,
+            use: [{ loader: loaderPath }],
+            enforce: "pre",
         });
-      });
+        if (compiler.hooks && compiler.hooks.normalModuleFactory) {
+            compiler.hooks.normalModuleFactory.tap(this.pluginName, (nmf) => {
+                nmf.hooks.afterResolve.tap(this.pluginName, (resolveData) => {
+                    if (!resolveData) return;
+                    const resource = resolveData.resource || (resolveData.resourceResolveData && resolveData.resourceResolveData.path);
+                    if (resource && /\.mpx$/.test(resource)) {
+                        resolveData.loaders = resolveData.loaders || [];
+                        const already = resolveData.loaders.some((l) => l && (l.loader || l) && path.resolve(l.loader || l) === loaderPath);
+                        if (!already) {
+                            resolveData.loaders.unshift({ loader: loaderPath });
+                        }
+                    }
+                });
+            });
+        }
     }
-  }
 }
 
 module.exports = MpxDevtoolsWebpackPlugin;
