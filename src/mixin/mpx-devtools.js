@@ -83,7 +83,7 @@ class MPXDevTools {
         return roots;
       },
       getInstanceBySrc(src='') {
-        return this
+        return that
       },
       getInstanceTreeRoot() {
         const roots = mpx.mpxDevTools.getRoot();
