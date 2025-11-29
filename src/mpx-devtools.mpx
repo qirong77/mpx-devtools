@@ -1555,6 +1555,7 @@ createComponent({
 ============================================== */
 .mpx-devtools-copy-btn
     margin-right 8rpx
+    margin-bottom 10rpx
     cursor pointer
 
 /* 复制按钮修改器：可展开属性中 */

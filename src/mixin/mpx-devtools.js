@@ -71,17 +71,17 @@ class MPXDevTools {
         const that = this;
         mpx.mpxDevTools = {
             getinstanceMapSet: () => this.instanceMapSet,
-            // getRoot: () => {
-            //     const roots = [...new Set(this.rootInstance)].filter((inst) => {
-            //         const state = inst.__mpxProxy?.proxy?.__mpxProxy?.state;
-            //         if (["__unmounted__"].includes(state)) {
-            //             return false;
-            //         }
-            //         return true;
-            //     });
-            //     this.rootInstance = roots;
-            //     return roots;
-            // },
+            getRoot: () => {
+                const roots = [...new Set(this.rootInstance)].filter((inst) => {
+                    const state = inst.__mpxProxy?.proxy?.__mpxProxy?.state;
+                    if (["__unmounted__"].includes(state)) {
+                        return false;
+                    }
+                    return true;
+                });
+                this.rootInstance = roots;
+                return roots;
+            },
             getInstanceBySrc(src = "") {
                 const instance = that.instanceMap[src] || null;
                 if (instance) {
@@ -94,6 +94,7 @@ class MPXDevTools {
                         instance,
                     };
                 }
+                const canUseSources = Object.keys(that.instanceMap);
                 return `[mpxDevTools] 未找到组件实例: ${src}。可用的组件源文件有: ` + canUseSources.join(', ');
             },
             getInstanceTreeRoot() {
