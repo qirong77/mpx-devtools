@@ -8,12 +8,8 @@ class MpxDevtoolsWebpackPlugin {
 
     apply(compiler) {
         const target = process.env.MPX_CURRENT_TARGET_MODE;
-        if (target === "web") {
-            console.log(`[MpxDevtoolsWebpackPlugin] Skipped for target: ${target}`);
-            return;
-        }
         if (target !== "wx") {
-            console.log(`[MpxDevtoolsWebpackPlugin] 由于作者比较忙，devtools暂时只支持微信小程序，跳过此次编译。当前target: ${target}`);
+            console.log(`[MpxDevtoolsWebpackPlugin] Skipped for target: ${target}`);
             return;
         }
         const loaderPath = "mpx-devtools/src/webpack-plugin/loader/mpx-devtools-source-loader.js";

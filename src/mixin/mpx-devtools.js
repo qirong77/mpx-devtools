@@ -71,17 +71,17 @@ class MPXDevTools {
         const that = this;
         mpx.mpxDevTools = {
             getinstanceMapSet: () => this.instanceMapSet,
-            getRoot: () => {
-                const roots = [...new Set(this.rootInstance)].filter((inst) => {
-                    const state = inst.__mpxProxy?.proxy?.__mpxProxy?.state;
-                    if (["__unmounted__"].includes(state)) {
-                        return false;
-                    }
-                    return true;
-                });
-                this.rootInstance = roots;
-                return roots;
-            },
+            // getRoot: () => {
+            //     const roots = [...new Set(this.rootInstance)].filter((inst) => {
+            //         const state = inst.__mpxProxy?.proxy?.__mpxProxy?.state;
+            //         if (["__unmounted__"].includes(state)) {
+            //             return false;
+            //         }
+            //         return true;
+            //     });
+            //     this.rootInstance = roots;
+            //     return roots;
+            // },
             getInstanceBySrc(src = "") {
                 const instance = that.instanceMap[src] || null;
                 if (instance) {
@@ -94,21 +94,21 @@ class MPXDevTools {
                         instance,
                     };
                 }
-                return '空空如也～'
+                return `[mpxDevTools] 未找到组件实例: ${src}。可用的组件源文件有: ` + canUseSources.join(', ');
             },
             getInstanceTreeRoot() {
                 const roots = mpx.mpxDevTools.getRoot();
                 const node = createInstanceTree(roots[roots.length - 1], 30);
                 return node;
             },
-            // 获取指定组件的子组件
-            getChildrenComponents(instance) {
-                return findChildrenComponent(instance);
-            },
-            // 获取指定组件的父组件
-            getParentComponent(instance) {
-                return findParentComponent(instance);
-            },
+            // // 获取指定组件的子组件
+            // getChildrenComponents(instance) {
+            //     return findChildrenComponent(instance);
+            // },
+            // // 获取指定组件的父组件
+            // getParentComponent(instance) {
+            //     return findParentComponent(instance);
+            // },
         };
         self.mpx = mpx;
         self.mpxDevTools = mpx.mpxDevTools;
