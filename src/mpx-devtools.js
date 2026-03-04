@@ -157,6 +157,7 @@ class MpxDevtoolsComponentInfo {
             return acc;
         }, {});
         this.id = Math.random().toString(36).slice(2, 5); // 简单生成一个随机 ID
+        this.parentId = instance?.selectOwnerComponent()?.$MpxDevToolsInfo?.id || null;
         this.ref = 'wx.mpxDevTools.getInstanceById("' + this.id + '")';
         // 尝试多种方式获取文件路径
         this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
