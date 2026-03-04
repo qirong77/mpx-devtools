@@ -50,14 +50,11 @@ class MPXDevTools {
                     const strValue = String(obj);
                     if (strValue.includes(text)) {
                         // 构建完整的访问路径
-                        const fullPath = prefix && prefix.startsWith('[') 
-                            ? `$$$MpxDevToolsInfo${prefix}` 
-                            : `$$$MpxDevToolsInfo.${prefix}`;
                         results.push({
                             component: componentPath,
                             path: prefix,
                             value: obj,
-                            ref: info.ref + '.' + fullPath
+                            ref: info.ref + '.' + prefix
                         });
                     }
                     return;
@@ -79,14 +76,11 @@ class MPXDevTools {
                         const strValue = String(value);
                         if (strValue.includes(text)) {
                             // 构建完整的访问路径
-                            const fullPath = currentPath && currentPath.startsWith('[') 
-                                ? `$$$MpxDevToolsInfo${currentPath}` 
-                                : `$$$MpxDevToolsInfo.${currentPath}`;
                             results.push({
                                 component: componentPath,
                                 path: currentPath,
                                 value: value,
-                                ref: info.ref + '.' + fullPath
+                                ref: info.ref + '.' + currentPath
                             });
                         }
                     }
