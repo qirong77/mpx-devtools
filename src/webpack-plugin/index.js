@@ -1,5 +1,6 @@
 const path = require("path");
 
+
 class MpxDevtoolsWebpackPlugin {
     constructor(options = {}) {
         this.options = options;
