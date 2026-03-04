@@ -48,21 +48,15 @@ class MPXDevTools {
             return {};
         }
         const componentsInfo = Array.from(this.activeInstances).map((instance) => {
-            return {
-                src: instance.mpxDevToolsInfo?.__mpx_file_src__ || "未知组件",
+            const info = {
+                id: instance.mpxDevToolsInfo?.__mpx_file_src__ || "未知组件",
                 ref:`wx.mpxDevTools.getInstanceById('${instance.mpxDevToolsInfo?.id}')`,
-                ...instance.mpxDevToolsInfo?.toJson(),
-            }
-        });
-        console.table(componentsInfo);
-        wx.setClipboardData({
-            data: JSON.stringify(componentsInfo, null, 2),
-            success() {
-                console.log("组件信息已复制到剪贴板");
-            },
-            fail(err) {
-                console.error("复制组件信息失败:", err);
-            }
+            };
+            console.table(info);
+            console.log('props',instance.mpxDevToolsInfo.props);
+            console.log('data',instance.mpxDevToolsInfo.data);
+            console.log('computed',instance.mpxDevToolsInfo.computed);
+            return instance.mpxDevToolsInfo;
         });
         return componentsInfo;
     }
