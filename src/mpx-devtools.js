@@ -12,8 +12,8 @@ class MPXDevTools {
             if (this.instancesSet.has(instance)) {
                 return;
             }
-            instance.$$$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
-            if (instance.$$$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
+            instance.$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
+            if (instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
                 return;
             }
             this.instancesSet.add(instance);
@@ -31,8 +31,8 @@ class MPXDevTools {
         
         this.instancesSet.forEach((instance) => {
             // 更新实例信息
-            instance.$$$MpxDevToolsInfo.update();
-            const info = instance.$$$MpxDevToolsInfo;
+            instance.$MpxDevToolsInfo.update();
+            const info = instance.$MpxDevToolsInfo;
             const componentPath = info.__mpx_file_src__;
             
             // 递归搜索对象中包含文本的值
@@ -52,9 +52,8 @@ class MPXDevTools {
                         // 构建完整的访问路径
                         results.push({
                             component: componentPath,
-                            path: prefix,
                             value: obj,
-                            ref: info.ref + '.' + prefix
+                            ref: info.ref + '.$MpxDevToolsInfo.' + prefix
                         });
                     }
                     return;
@@ -78,9 +77,8 @@ class MPXDevTools {
                             // 构建完整的访问路径
                             results.push({
                                 component: componentPath,
-                                path: currentPath,
                                 value: value,
-                                ref: info.ref + '.' + currentPath
+                                ref: info.ref + '.$MpxDevToolsInfo.' + currentPath
                             });
                         }
                     }
@@ -105,12 +103,12 @@ class MPXDevTools {
     get activeInstances() {
         const obj = {};
         this.instancesSet.forEach((instance) => {
-            instance.$$$MpxDevToolsInfo.update();
-            const src = instance.$$$MpxDevToolsInfo?.__mpx_file_src__ || "未知组件";
+            instance.$MpxDevToolsInfo.update();
+            const src = instance.$MpxDevToolsInfo?.__mpx_file_src__ || "未知组件";
             if (obj[src]) {
-                obj[src].push(instance.$$$MpxDevToolsInfo);
+                obj[src].push(instance.$MpxDevToolsInfo);
             } else {
-                obj[src] = [instance.$$$MpxDevToolsInfo];
+                obj[src] = [instance.$MpxDevToolsInfo];
             }
         });
         Object.keys(obj).forEach((key) => {
@@ -133,7 +131,7 @@ class MPXDevTools {
     }
     getInstanceById(id) {
         for (const instance of this.instancesSet) {
-            if (instance.$$$MpxDevToolsInfo?.id === id) {
+            if (instance.$MpxDevToolsInfo?.id === id) {
                 return instance;
             }
         }
