@@ -54,8 +54,11 @@ class MPXDevTools {
             };
             console.table(info);
             console.log('props',instance.mpxDevToolsInfo.props);
+            console.log('\n');
             console.log('data',instance.mpxDevToolsInfo.data);
+            console.log('\n');
             console.log('computed',instance.mpxDevToolsInfo.computed);
+            console.log('\n');
             return instance.mpxDevToolsInfo;
         });
         return componentsInfo;
