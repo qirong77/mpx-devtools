@@ -11,7 +11,6 @@ export const mpxDevToolsPageMixin = {
     try {
       // 页面加载完成，当作挂载处理
       mpxDevTools.onComponentMounted(this)
-      console.log('[mpxDevTools] Page onLoad hook called')
     } catch (error) {
       console.error('[mpxDevTools] Error in page onLoad hook:', error)
     }
@@ -21,7 +20,6 @@ export const mpxDevToolsPageMixin = {
     try {
       // 页面卸载
       mpxDevTools.onComponentUnmounted(this)
-      console.log('[mpxDevTools] Page onUnload hook called')
     } catch (error) {
       console.error('[mpxDevTools] Error in page onUnload hook:', error)
     }

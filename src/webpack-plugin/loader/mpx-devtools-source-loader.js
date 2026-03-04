@@ -25,8 +25,8 @@ function addMpxSrcPathComputed(source, relativePath) {
 
   let [fullScriptMatch, openTag, scriptContent, closeTag] = scriptMatch;
 
-  // 仅对包含 createPage/createComponent/createStore 的脚本处理
-  const createRegex = /(createPage|createComponent|createStore)\s*\(\s*\{/i;
+  // 仅对包含 createPage/createComponent 的脚本处理
+  const createRegex = /(createPage|createComponent)\s*\(\s*\{/i;
   const createMatch = scriptContent.match(createRegex);
   if (!createMatch) return source;
 
@@ -69,7 +69,7 @@ function addMpxSrcPathData(source, relativePath) {
   // filePath is available via outer scope if needed; don't create unused expressions
 
   // 查找 createPage 或 createComponent 调用
-  const createRegex = /(createPage|createComponent|createStore)\s*\(\s*\{/i;
+  const createRegex = /(createPage|createComponent)\s*\(\s*\{/i;
   const createMatch = scriptContent.match(createRegex);
   if (!createMatch) {
     return source;
