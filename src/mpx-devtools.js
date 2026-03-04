@@ -41,7 +41,6 @@ class MPXDevTools {
     onComponentUnmounted(instance) {
         try {
             if (!this.instancesSet.has(instance)) {
-                console.log("[mpxDevTools] Component not tracked, skipping unmount");
                 return;
             }
 
