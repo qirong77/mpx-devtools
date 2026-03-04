@@ -21,9 +21,97 @@ class MPXDevTools {
             console.error("[mpxDevTools] Error mounting component:", error);
         }
     }
+    search(text='') {
+        const results = [];
+        
+        // 如果没有搜索文本，返回空结果
+        if (!text) {
+            return results;
+        }
+        
+        this.instancesSet.forEach((instance) => {
+            // 更新实例信息
+            instance.$$$MpxDevToolsInfo.update();
+            const info = instance.$$$MpxDevToolsInfo;
+            const componentPath = info.__mpx_file_src__;
+            
+            // 递归搜索对象中包含文本的值
+            const searchInObject = (obj, prefix = '', visited = new WeakSet()) => {
+                // 防止循环引用
+                if (obj && typeof obj === 'object') {
+                    if (visited.has(obj)) {
+                        return;
+                    }
+                    visited.add(obj);
+                }
+                
+                if (!obj || typeof obj !== 'object') {
+                    // 检查原始值是否包含搜索文本
+                    const strValue = String(obj);
+                    if (strValue.includes(text)) {
+                        // 构建完整的访问路径
+                        const fullPath = prefix && prefix.startsWith('[') 
+                            ? `$$$MpxDevToolsInfo${prefix}` 
+                            : `$$$MpxDevToolsInfo.${prefix}`;
+                        results.push({
+                            component: componentPath,
+                            path: prefix,
+                            value: obj,
+                            ref: info.ref + '.' + fullPath
+                        });
+                    }
+                    return;
+                }
+                
+                // 遍历对象的所有属性
+                Object.keys(obj).forEach(key => {
+                    const value = obj[key];
+                    // 如果 key 是数字，使用 [数字] 格式，否则使用 .key 格式
+                    const currentPath = prefix 
+                        ? (/^\d+$/.test(key) ? `${prefix}[${key}]` : `${prefix}.${key}`)
+                        : key;
+                    
+                    if (typeof value === 'object' && value !== null) {
+                        // 递归搜索对象
+                        searchInObject(value, currentPath, visited);
+                    } else {
+                        // 检查值是否包含搜索文本
+                        const strValue = String(value);
+                        if (strValue.includes(text)) {
+                            // 构建完整的访问路径
+                            const fullPath = currentPath && currentPath.startsWith('[') 
+                                ? `$$$MpxDevToolsInfo${currentPath}` 
+                                : `$$$MpxDevToolsInfo.${currentPath}`;
+                            results.push({
+                                component: componentPath,
+                                path: currentPath,
+                                value: value,
+                                ref: info.ref + '.' + fullPath
+                            });
+                        }
+                    }
+                });
+            };
+            
+            // 在 data、computed、props 中搜索
+            searchInObject(info.data, 'data');
+            searchInObject(info.computed, 'computed');
+            searchInObject(info.props, 'props');
+        });
+        const obj = results.reduce((acc, item) => {
+            if (!acc[item.component]) {
+                acc[item.component] = [];
+            }
+            acc[item.component].push(item);
+            delete item.component; 
+            return acc;
+        }, {});
+        return obj;
+    }
     get activeInstances() {
         const obj = {};
         this.instancesSet.forEach((instance) => {
+            instance.$$$MpxDevToolsInfo.update();
             const src = instance.$$$MpxDevToolsInfo?.__mpx_file_src__ || "未知组件";
             if (obj[src]) {
                 obj[src].push(instance.$$$MpxDevToolsInfo);
@@ -61,8 +149,14 @@ class MPXDevTools {
 }
 
 class MpxDevtoolsComponentInfo {
+    _instance = null;
     constructor(instance) {
-        this.type = instance?.$rawOptions?.__type__ || "未知类型";
+        this._instance = instance;
+        this.update();
+    }
+    update() {
+        const instance = this._instance;
+                this.type = instance?.$rawOptions?.__type__ || "未知类型";
         this.data = instance?.$rawOptions?.data || {};
         this.props = instance?.$rawOptions?.props || {};
         this.computed = Object.keys(instance?.$rawOptions?.computed || {}).reduce((acc, key) => {
@@ -79,6 +173,12 @@ class MpxDevtoolsComponentInfo {
 // 创建全局实例
 const mpxDevTools = new MPXDevTools();
 if (wx && typeof wx === "object") {
-    wx.mpxDevTools = mpxDevTools;
+    wx.mpxDevTools = {
+        search:mpxDevTools.search.bind(mpxDevTools),
+        getInstanceById: mpxDevTools.getInstanceById.bind(mpxDevTools),
+        get activeInstances() {
+            return mpxDevTools.activeInstances;
+        },
+    };
 }
 export default mpxDevTools;
