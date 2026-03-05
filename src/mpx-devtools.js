@@ -96,9 +96,13 @@ class MPXDevTools {
         return obj;
     }
     get activeInstances() {
+        const pageMpxDevToolsInfo = this.currentPageMpxDevToolsInfo; 
         const obj = {};
         this.instancesSet.forEach((instance) => {
             instance.$MpxDevToolsInfo.update();
+            if(!this.isPageInstance(instance, pageMpxDevToolsInfo.id)) {
+                return;
+            }   
             const src = instance.$MpxDevToolsInfo?.__mpx_file_src__ || "未知组件";
             if (obj[src]) {
                 obj[src].push(instance.$MpxDevToolsInfo);
@@ -112,6 +116,29 @@ class MPXDevTools {
             }
         });
         return obj;
+    }
+    isPageInstance(instance, pageId) {
+        let parentId = null
+        while(instance) {
+            instance = instance.selectOwnerComponent();
+            if (instance) {
+                parentId = instance.$MpxDevToolsInfo?.id;
+                if (parentId === pageId) {
+                    return true;
+                }
+            } else {
+                break;
+            }
+        }
+        return false;
+    }
+    get currentPageMpxDevToolsInfo() {
+        for (const instance of this.instancesSet) {
+            if (instance.$rawOptions?.__type__ === "page") {
+                return instance.$MpxDevToolsInfo;
+            }
+        }
+        throw new Error("[mpxDevTools] No active page instance found");
     }
     onComponentUnmounted(instance) {
         try {
