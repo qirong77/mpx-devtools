@@ -50,6 +50,7 @@ class MPXDevTools {
                         results.push({
                             component: componentPath,
                             value: obj,
+                            path: prefix,
                             ref: info.ref + ".$MpxDevToolsInfo." + prefix,
                         });
                     }
@@ -73,6 +74,7 @@ class MPXDevTools {
                             results.push({
                                 component: componentPath,
                                 value: value,
+                                path: currentPath,
                                 ref: info.ref + ".$MpxDevToolsInfo." + currentPath,
                             });
                         }
