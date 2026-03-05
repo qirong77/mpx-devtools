@@ -95,13 +95,14 @@ class MPXDevTools {
         return obj;
     }
     get activeInstances() {
-        const pageMpxDevToolsInfo = this.currentPageMpxDevToolsInfo; 
-        const obj = {};
-        this.instancesSet.forEach((instance) => {
-            instance.$MpxDevToolsInfo.update();
-            if(!this.isPageInstance(instance, pageMpxDevToolsInfo.id)) {
-                return;
-            }   
+        try {
+            const pageMpxDevToolsInfo = this.currentPageMpxDevToolsInfo;
+            const obj = {};
+            this.instancesSet.forEach((instance) => {
+                instance.$MpxDevToolsInfo.update();
+                if(!this.isPageInstance(instance, pageMpxDevToolsInfo.id)) {
+                    return;
+                }   
             const src = instance.$MpxDevToolsInfo?.__mpx_file_src__ || "未知组件";
             if (obj[src]) {
                 obj[src].push(instance.$MpxDevToolsInfo);
@@ -109,20 +110,30 @@ class MPXDevTools {
                 obj[src] = [instance.$MpxDevToolsInfo];
             }
         });
-        Object.keys(obj).forEach((key) => {
-            if (obj[key].length === 1) {
-                obj[key] = obj[key][0];
-            }
-        });
-        return obj;
+            Object.keys(obj).forEach((key) => {
+                if (obj[key].length === 1) {
+                    obj[key] = obj[key][0];
+                }
+            });
+            return obj;
+        } catch (error) {
+            console.error("[mpxDevTools] Error getting active instances:", error);
+            return {};
+        }
     }
     isPageInstance(instance, pageId) {
-        let parentId = null
-        while(instance) {
-            instance = instance.selectOwnerComponent();
-            if (instance) {
-                parentId = instance.$MpxDevToolsInfo?.id;
-                if (parentId === pageId) {
+        // 首先检查当前实例本身是否就是目标 page
+        if (instance.$MpxDevToolsInfo?.id === pageId) {
+            return true;
+        }
+        
+        // 然后向上遍历父组件
+        let current = instance;
+        while(current) {
+            current = current.selectOwnerComponent();
+            if (current) {
+                const currentId = current.$MpxDevToolsInfo?.id;
+                if (currentId === pageId) {
                     return true;
                 }
             } else {
