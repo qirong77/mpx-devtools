@@ -9,10 +9,9 @@ class MPXDevTools {
     onComponentMounted(instance) {
         try {
             instance.$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
-            // 防止重复注册（多个生命周期钩子可能都会触发）
-            // if (instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
-            //     return;
-            // }
+            if (instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
+                return;
+            }
             this.instancesSet.add(instance);
         } catch (error) {
             console.error("[mpxDevTools] Error mounting component:", error);
