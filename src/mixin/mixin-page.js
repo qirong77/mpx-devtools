@@ -18,14 +18,13 @@ export const mpxDevToolsPageMixin = {
   onShow() {
     console.debug('页面显示')
     console.debug(this)
-
+    debugger
     mpxDevTools.onComponentMounted(this)
   },
   
   onHide() {
     console.debug('页面隐藏')
     console.debug(this)
-
     mpxDevTools.onComponentUnmounted(this)
   },
   

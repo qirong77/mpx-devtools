@@ -179,6 +179,7 @@ class MpxDevtoolsComponentInfo {
     }
     update() {
         const instance = this._instance;
+
         this.props = Object.keys(instance.$rawOptions?.props || {}).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
@@ -189,12 +190,13 @@ class MpxDevtoolsComponentInfo {
             acc[key] = val;
             return acc;
         }, {});
-        this.data = Object.keys(instance.$rawOptions?.data || {}).reduce((acc, key) => {
+        const data = typeof instance?.$rawOptions.dataFn === "function" ? instance.$rawOptions.dataFn.call(instance) : instance.$rawOptions?.data || {};
+        this.data = Object.keys(data).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
             return acc;
         }, {});
-        this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
+        this.__mpx_file_src__ = instance.route  || this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
         this.parentId = instance?.selectOwnerComponent()?.$MpxDevToolsInfo?.id || null;
     }
 }
