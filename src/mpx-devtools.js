@@ -10,10 +10,9 @@ class MPXDevTools {
         try {
             instance.$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
             // 防止重复注册（多个生命周期钩子可能都会触发）
-            if (this.instancesSet.has(instance) || instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
-                return;
-            }
-
+            // if (instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
+            //     return;
+            // }
             this.instancesSet.add(instance);
         } catch (error) {
             console.error("[mpxDevTools] Error mounting component:", error);
@@ -116,10 +115,6 @@ class MPXDevTools {
     }
     onComponentUnmounted(instance) {
         try {
-            if (!this.instancesSet.has(instance)) {
-                return;
-            }
-
             this.instancesSet.delete(instance);
         } catch (error) {
             console.error("[mpxDevTools] Error unmounting component:", error);
@@ -169,12 +164,6 @@ class MpxDevtoolsComponentInfo {
 // 创建全局实例
 const mpxDevTools = new MPXDevTools();
 if (wx && typeof wx === "object") {
-    wx.mpxDevTools = {
-        search: mpxDevTools.search.bind(mpxDevTools),
-        getInstanceById: mpxDevTools.getInstanceById.bind(mpxDevTools),
-        get activeInstances() {
-            return mpxDevTools.activeInstances;
-        },
-    };
+    wx.mpxDevTools = mpxDevTools
 }
 export default mpxDevTools;
