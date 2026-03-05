@@ -3,95 +3,55 @@
  * 提供组件生命周期追踪和组件树可视化功能
  */
 
+import { printTree, buildTreeStructure, buildSearchTree, printSearchTree } from './utils/tree-printer.js';
+
+/**
+ * MPX DevTools 主类
+ * @class
+ */
 class MPXDevTools {
+    /**
+     * 所有活跃组件实例的集合
+     * @type {Set}
+     */
     instancesSet = new Set();
+    
+    /**
+     * 构造函数
+     */
     constructor() {}
     
-    // 构建树形结构的辅助方法
-    _buildTreeStructure(instancesMap) {
-        const allInstances = [];
-        const idToInstance = new Map();
-        
-        // 收集所有实例，并建立 id 到实例的映射
-        Object.keys(instancesMap).forEach(key => {
-            const instances = Array.isArray(instancesMap[key]) ? instancesMap[key] : [instancesMap[key]];
-            instances.forEach(instance => {
-                allInstances.push({ key, instance });
-                idToInstance.set(instance.id, instance);
-            });
-        });
-        
-        // 找出所有根节点（没有父节点的）
-        const roots = allInstances.filter(item => !item.instance.parentId);
-        
-        // 递归构建树形结构
-        const buildTreeNode = (instance) => {
-            const node = {
-                path: instance.__mpx_file_src__ || '未知组件',
-                value: instance,
-                children: []
-            };
-            
-            // 查找子节点
-            const children = allInstances.filter(item => item.instance.parentId === instance.id);
-            children.forEach((child) => {
-                node.children.push(buildTreeNode(child.instance));
-            });
-            
-            return node;
-        };
-        
-        // 构建所有根节点的树
-        const result = [];
-        roots.forEach(root => {
-            result.push(buildTreeNode(root.instance));
-        });
-        
-        // 处理可能的孤立节点（有 parentId 但找不到父节点）
-        const processedIds = new Set();
-        const collectIds = (node) => {
-            processedIds.add(node.value.id);
-            node.children.forEach(child => collectIds(child));
-        };
-        result.forEach(root => collectIds(root));
-        
-        allInstances.forEach(item => {
-            if (!processedIds.has(item.instance.id)) {
-                result.push({
-                    path: item.instance.__mpx_file_src__ || '未知组件',
-                    value: item.instance,
-                    children: []
-                });
-            }
-        });
-        
-        return result;
-    }
-    
-    // 打印树形结构的辅助方法
-    _printTree(tree, indent = '') {
-        if (Array.isArray(tree)) {
-            tree.forEach(node => {
-                console.log(indent + node.path,[node]);
-                if (node.children && node.children.length > 0) {
-                    this._printTree(node.children, indent + '    ');
-                }
-            });
-        } else {
-            console.log(indent + tree.path,[tree]);
-            if (tree.children && tree.children.length > 0) {
-                this._printTree(tree.children, indent + '    ');
-            }
-        }
-    }
-    
-    // 打印组件树
+    /**
+     * 打印组件树
+     * @returns {Array} 返回树形结构数组
+     */
     printTree() {
         const tree = this.activeInstances;
-        this._printTree(tree);
+        printTree(tree);
         return tree;
     }
     
+    /**
+     * 搜索并打印结果树
+     * @param {string} text - 要搜索的文本
+     * @returns {Array} 返回搜索结果树
+     */
+    printSearch(text) {
+        const tree = this.search(text);
+        if (tree.length === 0) {
+            console.log('未找到匹配的结果');
+        } else {
+            console.log('=== 搜索结果 (\u2713 表示有匹配结果，\u25cb 表示仅显示父路径) ===');
+            printSearchTree(tree);
+        }
+        return tree;
+    }
+    
+    /**
+     * 组件挂载时的回调
+     * @param {Object} instance - 组件实例
+     * @returns {void}
+     */
     onComponentMounted(instance) {
         try {
             // 防止重复注册（多个生命周期钩子可能都会触发）
@@ -107,6 +67,12 @@ class MPXDevTools {
             console.error("[mpxDevTools] Error mounting component:", error);
         }
     }
+    
+    /**
+     * 在所有组件实例中搜索包含特定文本的数据
+     * @param {string} [text=''] - 要搜索的文本
+     * @returns {Array} 返回包含搜索结果的树形结构数组
+     */
     search(text='') {
         const results = [];
         
@@ -137,6 +103,7 @@ class MPXDevTools {
                     if (strValue.includes(text)) {
                         // 构建完整的访问路径
                         results.push({
+                            instanceId: info.id,
                             component: componentPath,
                             value: obj,
                             ref: info.ref + '.$MpxDevToolsInfo.' + prefix
@@ -162,6 +129,7 @@ class MPXDevTools {
                         if (strValue.includes(text)) {
                             // 构建完整的访问路径
                             results.push({
+                                instanceId: info.id,
                                 component: componentPath,
                                 value: value,
                                 ref: info.ref + '.$MpxDevToolsInfo.' + currentPath
@@ -180,97 +148,28 @@ class MPXDevTools {
         // 按照实例 ID 分组搜索结果
         const resultsByInstance = {};
         results.forEach(item => {
-            this.instancesSet.forEach(instance => {
-                if (instance.$MpxDevToolsInfo.ref === item.ref.split('.$MpxDevToolsInfo')[0]) {
-                    const id = instance.$MpxDevToolsInfo.id;
-                    if (!resultsByInstance[id]) {
-                        resultsByInstance[id] = {
-                            instance: instance.$MpxDevToolsInfo,
-                            results: []
-                        };
-                    }
-                    resultsByInstance[id].results.push(item);
-                }
+            const id = item.instanceId;
+            if (!resultsByInstance[id]) {
+                resultsByInstance[id] = {
+                    results: []
+                };
+            }
+            // 移除 instanceId，只保留搜索结果相关信息
+            resultsByInstance[id].results.push({
+                component: item.component,
+                value: item.value,
+                ref: item.ref
             });
         });
         
-        // 构建树形结构的映射
-        const instancesMap = {};
-        Object.keys(resultsByInstance).forEach(id => {
-            const data = resultsByInstance[id];
-            const key = data.instance.__mpx_file_src__ || '未知组件';
-            if (!instancesMap[key]) {
-                instancesMap[key] = [];
-            }
-            instancesMap[key].push(data.instance);
-        });
-        
-        // 使用树形结构，并添加搜索结果
-        return this._buildTreeStructureWithData(instancesMap, resultsByInstance);
+        // 使用树形结构，保留完整的父子层级关系
+        return buildSearchTree(this.instancesSet, resultsByInstance);
     }
     
-    // 构建带数据的树形结构
-    _buildTreeStructureWithData(instancesMap, dataMap) {
-        const allInstances = [];
-        const idToInstance = new Map();
-        
-        // 收集所有实例
-        Object.keys(instancesMap).forEach(key => {
-            const instances = Array.isArray(instancesMap[key]) ? instancesMap[key] : [instancesMap[key]];
-            instances.forEach(instance => {
-                allInstances.push({ key, instance });
-                idToInstance.set(instance.id, instance);
-            });
-        });
-        
-        // 找出所有根节点
-        const roots = allInstances.filter(item => !item.instance.parentId);
-        
-        // 递归构建树形结构
-        const buildTreeNode = (instance) => {
-            const node = {
-                path: instance.__mpx_file_src__ || '未知组件',
-                value: dataMap[instance.id]?.results || instance,
-                children: []
-            };
-            
-            // 查找子节点
-            const children = allInstances.filter(item => item.instance.parentId === instance.id);
-            children.forEach((child) => {
-                node.children.push(buildTreeNode(child.instance));
-            });
-            
-            return node;
-        };
-        
-        // 构建所有根节点的树
-        const result = [];
-        roots.forEach(root => {
-            result.push(buildTreeNode(root.instance));
-        });
-        
-        // 处理孤立节点
-        const processedIds = new Set();
-        const collectIds = (node) => {
-            if (node.value && typeof node.value === 'object' && node.value.id) {
-                processedIds.add(node.value.id);
-            }
-            node.children.forEach(child => collectIds(child));
-        };
-        result.forEach(root => collectIds(root));
-        
-        allInstances.forEach(item => {
-            if (!processedIds.has(item.instance.id)) {
-                result.push({
-                    path: item.instance.__mpx_file_src__ || '未知组件',
-                    value: dataMap[item.instance.id]?.results || item.instance,
-                    children: []
-                });
-            }
-        });
-        
-        return result;
-    }
+    /**
+     * 获取所有活跃组件实例的树形结构
+     * @returns {Array} 返回树形结构数组
+     */
     get activeInstances() {
         const obj = {};
         this.instancesSet.forEach((instance) => {
@@ -284,8 +183,14 @@ class MPXDevTools {
         });
         
         // 构建树形结构
-        return this._buildTreeStructure(obj);
+        return buildTreeStructure(obj);
     }
+    
+    /**
+     * 组件卸载时的回调
+     * @param {Object} instance - 组件实例
+     * @returns {void}
+     */
     onComponentUnmounted(instance) {
         try {
             if (!this.instancesSet.has(instance)) {
@@ -297,6 +202,12 @@ class MPXDevTools {
             console.error("[mpxDevTools] Error unmounting component:", error);
         }
     }
+    
+    /**
+     * 根据 ID 获取组件实例
+     * @param {string} id - 组件实例的 ID
+     * @returns {Object|null} 返回组件实例或 null
+     */
     getInstanceById(id) {
         for (const instance of this.instancesSet) {
             if (instance.$MpxDevToolsInfo?.id === id) {
@@ -308,12 +219,31 @@ class MPXDevTools {
     }
 }
 
+/**
+ * 组件信息类
+ * @class
+ */
 class MpxDevtoolsComponentInfo {
+    /**
+     * 组件实例引用
+     * @type {Object|null}
+     * @private
+     */
     _instance = null;
+    
+    /**
+     * 构造函数
+     * @param {Object} instance - 组件实例
+     */
     constructor(instance) {
         this._instance = instance;
         this.update();
     }
+    
+    /**
+     * 更新组件信息
+     * @returns {void}
+     */
     update() {
         const instance = this._instance;
                 this.type = instance?.$rawOptions?.__type__ || "未知类型";
@@ -331,6 +261,7 @@ class MpxDevtoolsComponentInfo {
         this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
     }
 }
+
 // 创建全局实例
 const mpxDevTools = new MPXDevTools();
 if (wx && typeof wx === "object") {
@@ -338,6 +269,7 @@ if (wx && typeof wx === "object") {
         search: mpxDevTools.search.bind(mpxDevTools),
         getInstanceById: mpxDevTools.getInstanceById.bind(mpxDevTools),
         printTree: mpxDevTools.printTree.bind(mpxDevTools),
+        printSearch: mpxDevTools.printSearch.bind(mpxDevTools),
         get activeInstances() {
             return mpxDevTools.activeInstances;
         },
