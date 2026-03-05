@@ -6,6 +6,92 @@
 class MPXDevTools {
     instancesSet = new Set();
     constructor() {}
+    
+    // 构建树形结构的辅助方法
+    _buildTreeStructure(instancesMap) {
+        const allInstances = [];
+        const idToInstance = new Map();
+        
+        // 收集所有实例，并建立 id 到实例的映射
+        Object.keys(instancesMap).forEach(key => {
+            const instances = Array.isArray(instancesMap[key]) ? instancesMap[key] : [instancesMap[key]];
+            instances.forEach(instance => {
+                allInstances.push({ key, instance });
+                idToInstance.set(instance.id, instance);
+            });
+        });
+        
+        // 找出所有根节点（没有父节点的）
+        const roots = allInstances.filter(item => !item.instance.parentId);
+        
+        // 递归构建树形结构
+        const buildTreeNode = (instance) => {
+            const node = {
+                path: instance.__mpx_file_src__ || '未知组件',
+                value: instance,
+                children: []
+            };
+            
+            // 查找子节点
+            const children = allInstances.filter(item => item.instance.parentId === instance.id);
+            children.forEach((child) => {
+                node.children.push(buildTreeNode(child.instance));
+            });
+            
+            return node;
+        };
+        
+        // 构建所有根节点的树
+        const result = [];
+        roots.forEach(root => {
+            result.push(buildTreeNode(root.instance));
+        });
+        
+        // 处理可能的孤立节点（有 parentId 但找不到父节点）
+        const processedIds = new Set();
+        const collectIds = (node) => {
+            processedIds.add(node.value.id);
+            node.children.forEach(child => collectIds(child));
+        };
+        result.forEach(root => collectIds(root));
+        
+        allInstances.forEach(item => {
+            if (!processedIds.has(item.instance.id)) {
+                result.push({
+                    path: item.instance.__mpx_file_src__ || '未知组件',
+                    value: item.instance,
+                    children: []
+                });
+            }
+        });
+        
+        return result;
+    }
+    
+    // 打印树形结构的辅助方法
+    _printTree(tree, indent = '') {
+        if (Array.isArray(tree)) {
+            tree.forEach(node => {
+                console.log(indent + node.path,[node]);
+                if (node.children && node.children.length > 0) {
+                    this._printTree(node.children, indent + '    ');
+                }
+            });
+        } else {
+            console.log(indent + tree.path,[tree]);
+            if (tree.children && tree.children.length > 0) {
+                this._printTree(tree.children, indent + '    ');
+            }
+        }
+    }
+    
+    // 打印组件树
+    printTree() {
+        const tree = this.activeInstances;
+        this._printTree(tree);
+        return tree;
+    }
+    
     onComponentMounted(instance) {
         try {
             // 防止重复注册（多个生命周期钩子可能都会触发）
@@ -90,15 +176,100 @@ class MPXDevTools {
             searchInObject(info.computed, 'computed');
             searchInObject(info.props, 'props');
         });
-        const obj = results.reduce((acc, item) => {
-            if (!acc[item.component]) {
-                acc[item.component] = [];
+        
+        // 按照实例 ID 分组搜索结果
+        const resultsByInstance = {};
+        results.forEach(item => {
+            this.instancesSet.forEach(instance => {
+                if (instance.$MpxDevToolsInfo.ref === item.ref.split('.$MpxDevToolsInfo')[0]) {
+                    const id = instance.$MpxDevToolsInfo.id;
+                    if (!resultsByInstance[id]) {
+                        resultsByInstance[id] = {
+                            instance: instance.$MpxDevToolsInfo,
+                            results: []
+                        };
+                    }
+                    resultsByInstance[id].results.push(item);
+                }
+            });
+        });
+        
+        // 构建树形结构的映射
+        const instancesMap = {};
+        Object.keys(resultsByInstance).forEach(id => {
+            const data = resultsByInstance[id];
+            const key = data.instance.__mpx_file_src__ || '未知组件';
+            if (!instancesMap[key]) {
+                instancesMap[key] = [];
             }
-            acc[item.component].push(item);
-            delete item.component; 
-            return acc;
-        }, {});
-        return obj;
+            instancesMap[key].push(data.instance);
+        });
+        
+        // 使用树形结构，并添加搜索结果
+        return this._buildTreeStructureWithData(instancesMap, resultsByInstance);
+    }
+    
+    // 构建带数据的树形结构
+    _buildTreeStructureWithData(instancesMap, dataMap) {
+        const allInstances = [];
+        const idToInstance = new Map();
+        
+        // 收集所有实例
+        Object.keys(instancesMap).forEach(key => {
+            const instances = Array.isArray(instancesMap[key]) ? instancesMap[key] : [instancesMap[key]];
+            instances.forEach(instance => {
+                allInstances.push({ key, instance });
+                idToInstance.set(instance.id, instance);
+            });
+        });
+        
+        // 找出所有根节点
+        const roots = allInstances.filter(item => !item.instance.parentId);
+        
+        // 递归构建树形结构
+        const buildTreeNode = (instance) => {
+            const node = {
+                path: instance.__mpx_file_src__ || '未知组件',
+                value: dataMap[instance.id]?.results || instance,
+                children: []
+            };
+            
+            // 查找子节点
+            const children = allInstances.filter(item => item.instance.parentId === instance.id);
+            children.forEach((child) => {
+                node.children.push(buildTreeNode(child.instance));
+            });
+            
+            return node;
+        };
+        
+        // 构建所有根节点的树
+        const result = [];
+        roots.forEach(root => {
+            result.push(buildTreeNode(root.instance));
+        });
+        
+        // 处理孤立节点
+        const processedIds = new Set();
+        const collectIds = (node) => {
+            if (node.value && typeof node.value === 'object' && node.value.id) {
+                processedIds.add(node.value.id);
+            }
+            node.children.forEach(child => collectIds(child));
+        };
+        result.forEach(root => collectIds(root));
+        
+        allInstances.forEach(item => {
+            if (!processedIds.has(item.instance.id)) {
+                result.push({
+                    path: item.instance.__mpx_file_src__ || '未知组件',
+                    value: dataMap[item.instance.id]?.results || item.instance,
+                    children: []
+                });
+            }
+        });
+        
+        return result;
     }
     get activeInstances() {
         const obj = {};
@@ -111,12 +282,9 @@ class MPXDevTools {
                 obj[src] = [instance.$MpxDevToolsInfo];
             }
         });
-        Object.keys(obj).forEach((key) => {
-            if (obj[key].length === 1) {
-                obj[key] = obj[key][0];
-            }
-        });
-        return obj;
+        
+        // 构建树形结构
+        return this._buildTreeStructure(obj);
     }
     onComponentUnmounted(instance) {
         try {
@@ -167,8 +335,9 @@ class MpxDevtoolsComponentInfo {
 const mpxDevTools = new MPXDevTools();
 if (wx && typeof wx === "object") {
     wx.mpxDevTools = {
-        search:mpxDevTools.search.bind(mpxDevTools),
+        search: mpxDevTools.search.bind(mpxDevTools),
         getInstanceById: mpxDevTools.getInstanceById.bind(mpxDevTools),
+        printTree: mpxDevTools.printTree.bind(mpxDevTools),
         get activeInstances() {
             return mpxDevTools.activeInstances;
         },
