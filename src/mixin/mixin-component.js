@@ -7,6 +7,17 @@ import mpxDevTools from '../mpx-devtools.js'
 
 export const mpxDevToolsComponentMixin = {
   // 小程序原生组件生命周期（最优先，兼容性最好）
+    pageLifetimes: {
+    // 在组件中监听页面生命周期
+    show() {
+      mpxDevTools.onComponentMounted(this)
+
+    },
+  
+    hide() {
+      mpxDevTools.onComponentUnmounted(this)
+    }
+  },
   attached() {
     try {
       mpxDevTools.onComponentMounted(this)

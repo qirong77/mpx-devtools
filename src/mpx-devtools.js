@@ -144,23 +144,32 @@ class MpxDevtoolsComponentInfo {
     _instance = null;
     constructor(instance) {
         this._instance = instance;
+        this.id = Math.random().toString(36).slice(2, 5); // 简单生成一个随机 ID
+        this.ref = 'wx.mpxDevTools.getInstanceById("' + this.id + '")';
+        this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
         this.update();
     }
     update() {
         const instance = this._instance;
-                this.type = instance?.$rawOptions?.__type__ || "未知类型";
+        this.type = instance?.$rawOptions?.__type__ || "未知类型";
         this.data = instance?.$rawOptions?.data || {};
         this.props = instance?.$rawOptions?.props || {};
+        this.props = Object.keys(this.props).reduce((acc, key) => {
+            const val = instance?.[key];
+            acc[key] = val;
+            return acc;
+        }, {});
         this.computed = Object.keys(instance?.$rawOptions?.computed || {}).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
             return acc;
         }, {});
-        this.id = Math.random().toString(36).slice(2, 5); // 简单生成一个随机 ID
+        this.data = Object.keys(this.data).reduce((acc, key) => {
+            const val = instance?.[key];
+            acc[key] = val;
+            return acc;
+        }, {});
         this.parentId = instance?.selectOwnerComponent()?.$MpxDevToolsInfo?.id || null;
-        this.ref = 'wx.mpxDevTools.getInstanceById("' + this.id + '")';
-        // 尝试多种方式获取文件路径
-        this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
     }
 }
 // 创建全局实例

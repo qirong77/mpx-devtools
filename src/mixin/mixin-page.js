@@ -7,19 +7,22 @@ import mpxDevTools from '../mpx-devtools.js'
 
 export const mpxDevToolsPageMixin = {
   // 小程序页面生命周期
-  onLoad() {
+  onShow() {
     try {
       // 页面加载完成，当作挂载处理
       mpxDevTools.onComponentMounted(this)
+      debugger
     } catch (error) {
       console.error('[mpxDevTools] Error in page onLoad hook:', error)
     }
   },
 
-  onUnload() {
+  onHide() {
     try {
       // 页面卸载
       mpxDevTools.onComponentUnmounted(this)
+      debugger
+
     } catch (error) {
       console.error('[mpxDevTools] Error in page onUnload hook:', error)
     }
