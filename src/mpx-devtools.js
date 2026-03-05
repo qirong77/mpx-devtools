@@ -8,8 +8,8 @@ class MPXDevTools {
     constructor() {}
     onComponentMounted(instance) {
         try {
-            instance.$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
-            if (instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
+            instance.$dev = new MpxDevtoolsComponentInfo(instance);
+            if (instance.$dev?.__mpx_file_src__ === "未知组件") {
                 return;
             }
             this.instancesSet.add(instance);
@@ -28,8 +28,8 @@ class MPXDevTools {
         const activeInstanceSet = new Set(Object.values(activeInstances).flat());
         activeInstanceSet.forEach(({_instance: instance}) => {
             // 更新实例信息
-            instance.$MpxDevToolsInfo.update();
-            const info = instance.$MpxDevToolsInfo;
+            instance.$dev.update();
+            const info = instance.$dev;
             const componentPath = info.__mpx_file_src__;
 
             // 递归搜索对象中包含文本的值
@@ -50,8 +50,7 @@ class MPXDevTools {
                         results.push({
                             component: componentPath,
                             value: obj,
-                            path: prefix,
-                            ref: info.ref + ".$MpxDevToolsInfo." + prefix,
+                            ref: info.ref + ".$dev." + prefix,
                         });
                     }
                     return;
@@ -74,8 +73,7 @@ class MPXDevTools {
                             results.push({
                                 component: componentPath,
                                 value: value,
-                                path: currentPath,
-                                ref: info.ref + ".$MpxDevToolsInfo." + currentPath,
+                                ref: info.ref + ".$dev." + currentPath,
                             });
                         }
                     }
@@ -91,7 +89,7 @@ class MPXDevTools {
             if (!acc[item.component]) {
                 acc[item.component] = [];
             }
-            acc[item.component].push(item);
+            acc[item.component].push(item);``
             delete item.component;
             return acc;
         }, {});
@@ -102,15 +100,15 @@ class MPXDevTools {
             const pageMpxDevToolsInfo = this.currentPageMpxDevToolsInfo;
             const obj = {};
             this.instancesSet.forEach((instance) => {
-                instance.$MpxDevToolsInfo.update();
+                instance.$dev.update();
                 if(!this.isPageInstance(instance, pageMpxDevToolsInfo.id)) {
                     return;
                 }   
-            const src = instance.$MpxDevToolsInfo?.__mpx_file_src__ || "未知组件";
+            const src = instance.$dev?.__mpx_file_src__ || "未知组件";
             if (obj[src]) {
-                obj[src].push(instance.$MpxDevToolsInfo);
+                obj[src].push(instance.$dev);
             } else {
-                obj[src] = [instance.$MpxDevToolsInfo];
+                obj[src] = [instance.$dev];
             }
         });
             Object.keys(obj).forEach((key) => {
@@ -126,7 +124,7 @@ class MPXDevTools {
     }
     isPageInstance(instance, pageId) {
         // 首先检查当前实例本身是否就是目标 page
-        if (instance.$MpxDevToolsInfo?.id === pageId) {
+        if (instance.$dev?.id === pageId) {
             return true;
         }
         
@@ -135,7 +133,7 @@ class MPXDevTools {
         while(current) {
             current = current.selectOwnerComponent();
             if (current) {
-                const currentId = current.$MpxDevToolsInfo?.id;
+                const currentId = current.$dev?.id;
                 if (currentId === pageId) {
                     return true;
                 }
@@ -148,7 +146,7 @@ class MPXDevTools {
     get currentPageMpxDevToolsInfo() {
         for (const instance of this.instancesSet) {
             if (instance.$rawOptions?.__type__ === "page") {
-                return instance.$MpxDevToolsInfo;
+                return instance.$dev;
             }
         }
         throw new Error("[mpxDevTools] No active page instance found");
@@ -160,9 +158,9 @@ class MPXDevTools {
             console.error("[mpxDevTools] Error unmounting component:", error);
         }
     }
-    getInstanceById(id) {
+    getIns(id) {
         for (const instance of this.instancesSet) {
-            if (instance.$MpxDevToolsInfo?.id === id) {
+            if (instance.$dev?.id === id) {
                 return instance;
             }
         }
@@ -176,7 +174,7 @@ class MpxDevtoolsComponentInfo {
     constructor(instance) {
         this._instance = instance;
         this.id = Math.random().toString(36).slice(2, 5); // 简单生成一个随机 ID
-        this.ref = 'wx.mpxDevTools.getInstanceById("' + this.id + '")';
+        this.ref = 'wx.mpxDevTools.getIns("' + this.id + '")';
         this.type = this._instance?.$rawOptions?.__type__ || "未知类型";
         this.update();
     }
@@ -200,7 +198,7 @@ class MpxDevtoolsComponentInfo {
             return acc;
         }, {});
         this.__mpx_file_src__ = instance.route  || this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
-        this.parentId = instance?.selectOwnerComponent()?.$MpxDevToolsInfo?.id || null;
+        this.parentId = instance?.selectOwnerComponent()?.$dev?.id || null;
     }
 }
 // 创建全局实例
