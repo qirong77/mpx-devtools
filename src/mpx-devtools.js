@@ -26,7 +26,7 @@ class MPXDevTools {
         }
         const activeInstances = this.activeInstances;
         const activeInstanceSet = new Set(Object.values(activeInstances).flat());
-        activeInstanceSet.forEach((instance) => {
+        activeInstanceSet.forEach(({_instance: instance}) => {
             // 更新实例信息
             instance.$MpxDevToolsInfo.update();
             const info = instance.$MpxDevToolsInfo;
