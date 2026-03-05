@@ -149,17 +149,17 @@ class MpxDevtoolsComponentInfo {
     }
     update() {
         const instance = this._instance;
-        this.props = Object.keys(instance.$rawOptions.props).reduce((acc, key) => {
+        this.props = Object.keys(instance.$rawOptions?.props || {}).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
             return acc;
         }, {});
-        this.computed = Object.keys(instance.$rawOptions.computed || {}).reduce((acc, key) => {
+        this.computed = Object.keys(instance.$rawOptions?.computed || {}).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
             return acc;
         }, {});
-        this.data = Object.keys(instance.$rawOptions.data || {}).reduce((acc, key) => {
+        this.data = Object.keys(instance.$rawOptions?.data || {}).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
             return acc;
