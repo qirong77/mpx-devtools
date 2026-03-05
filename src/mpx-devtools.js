@@ -8,41 +8,42 @@ class MPXDevTools {
     constructor() {}
     onComponentMounted(instance) {
         try {
+            instance.$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
             // 防止重复注册（多个生命周期钩子可能都会触发）
             if (this.instancesSet.has(instance) || instance.$MpxDevToolsInfo?.__mpx_file_src__ === "未知组件") {
                 return;
             }
-            instance.$MpxDevToolsInfo = new MpxDevtoolsComponentInfo(instance);
+
             this.instancesSet.add(instance);
         } catch (error) {
             console.error("[mpxDevTools] Error mounting component:", error);
         }
     }
-    search(text='') {
+    search(text = "") {
         const results = [];
-        
+
         // 如果没有搜索文本，返回空结果
         if (!text) {
             return results;
         }
-        
+
         this.instancesSet.forEach((instance) => {
             // 更新实例信息
             instance.$MpxDevToolsInfo.update();
             const info = instance.$MpxDevToolsInfo;
             const componentPath = info.__mpx_file_src__;
-            
+
             // 递归搜索对象中包含文本的值
-            const searchInObject = (obj, prefix = '', visited = new WeakSet()) => {
+            const searchInObject = (obj, prefix = "", visited = new WeakSet()) => {
                 // 防止循环引用
-                if (obj && typeof obj === 'object') {
+                if (obj && typeof obj === "object") {
                     if (visited.has(obj)) {
                         return;
                     }
                     visited.add(obj);
                 }
-                
-                if (!obj || typeof obj !== 'object') {
+
+                if (!obj || typeof obj !== "object") {
                     // 检查原始值是否包含搜索文本
                     const strValue = String(obj);
                     if (strValue.includes(text)) {
@@ -50,21 +51,19 @@ class MPXDevTools {
                         results.push({
                             component: componentPath,
                             value: obj,
-                            ref: info.ref + '.$MpxDevToolsInfo.' + prefix
+                            ref: info.ref + ".$MpxDevToolsInfo." + prefix,
                         });
                     }
                     return;
                 }
-                
+
                 // 遍历对象的所有属性
-                Object.keys(obj).forEach(key => {
+                Object.keys(obj).forEach((key) => {
                     const value = obj[key];
                     // 如果 key 是数字，使用 [数字] 格式，否则使用 .key 格式
-                    const currentPath = prefix 
-                        ? (/^\d+$/.test(key) ? `${prefix}[${key}]` : `${prefix}.${key}`)
-                        : key;
-                    
-                    if (typeof value === 'object' && value !== null) {
+                    const currentPath = prefix ? (/^\d+$/.test(key) ? `${prefix}[${key}]` : `${prefix}.${key}`) : key;
+
+                    if (typeof value === "object" && value !== null) {
                         // 递归搜索对象
                         searchInObject(value, currentPath, visited);
                     } else {
@@ -75,24 +74,24 @@ class MPXDevTools {
                             results.push({
                                 component: componentPath,
                                 value: value,
-                                ref: info.ref + '.$MpxDevToolsInfo.' + currentPath
+                                ref: info.ref + ".$MpxDevToolsInfo." + currentPath,
                             });
                         }
                     }
                 });
             };
-            
+
             // 在 data、computed、props 中搜索
-            searchInObject(info.data, 'data');
-            searchInObject(info.computed, 'computed');
-            searchInObject(info.props, 'props');
+            searchInObject(info.data, "data");
+            searchInObject(info.computed, "computed");
+            searchInObject(info.props, "props");
         });
         const obj = results.reduce((acc, item) => {
             if (!acc[item.component]) {
                 acc[item.component] = [];
             }
             acc[item.component].push(item);
-            delete item.component; 
+            delete item.component;
             return acc;
         }, {});
         return obj;
@@ -144,7 +143,6 @@ class MpxDevtoolsComponentInfo {
         this.id = Math.random().toString(36).slice(2, 5); // 简单生成一个随机 ID
         this.ref = 'wx.mpxDevTools.getInstanceById("' + this.id + '")';
         this.type = this._instance?.$rawOptions?.__type__ || "未知类型";
-        this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
         this.update();
     }
     update() {
@@ -164,6 +162,7 @@ class MpxDevtoolsComponentInfo {
             acc[key] = val;
             return acc;
         }, {});
+        this.__mpx_file_src__ = this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
         this.parentId = instance?.selectOwnerComponent()?.$MpxDevToolsInfo?.id || null;
     }
 }
@@ -171,7 +170,7 @@ class MpxDevtoolsComponentInfo {
 const mpxDevTools = new MPXDevTools();
 if (wx && typeof wx === "object") {
     wx.mpxDevTools = {
-        search:mpxDevTools.search.bind(mpxDevTools),
+        search: mpxDevTools.search.bind(mpxDevTools),
         getInstanceById: mpxDevTools.getInstanceById.bind(mpxDevTools),
         get activeInstances() {
             return mpxDevTools.activeInstances;
