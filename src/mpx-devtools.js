@@ -24,8 +24,9 @@ class MPXDevTools {
         if (!text) {
             return results;
         }
-
-        this.instancesSet.forEach((instance) => {
+        const activeInstances = this.activeInstances;
+        const activeInstanceSet = new Set(Object.values(activeInstances).flat());
+        activeInstanceSet.forEach((instance) => {
             // 更新实例信息
             instance.$MpxDevToolsInfo.update();
             const info = instance.$MpxDevToolsInfo;
