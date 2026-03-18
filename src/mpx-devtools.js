@@ -26,7 +26,7 @@ class MPXDevTools {
         }
         const activeInstances = this.activeInstances;
         const activeInstanceSet = new Set(Object.values(activeInstances).flat());
-        activeInstanceSet.forEach(({_instance: instance}) => {
+        activeInstanceSet.forEach(({ _instance: instance }) => {
             // 更新实例信息
             instance.$dev.update();
             const info = instance.$dev;
@@ -89,7 +89,8 @@ class MPXDevTools {
             if (!acc[item.component]) {
                 acc[item.component] = [];
             }
-            acc[item.component].push(item);``
+            acc[item.component].push(item);
+            ``;
             delete item.component;
             return acc;
         }, {});
@@ -101,16 +102,16 @@ class MPXDevTools {
             const obj = {};
             this.instancesSet.forEach((instance) => {
                 instance.$dev.update();
-                if(!this.isPageInstance(instance, pageMpxDevToolsInfo.id)) {
+                if (!this.isPageInstance(instance, pageMpxDevToolsInfo.id)) {
                     return;
-                }   
-            const src = instance.$dev?.__mpx_file_src__ || "未知组件";
-            if (obj[src]) {
-                obj[src].push(instance.$dev);
-            } else {
-                obj[src] = [instance.$dev];
-            }
-        });
+                }
+                const src = instance.$dev?.__mpx_file_src__ || "未知组件";
+                if (obj[src]) {
+                    obj[src].push(instance.$dev);
+                } else {
+                    obj[src] = [instance.$dev];
+                }
+            });
             Object.keys(obj).forEach((key) => {
                 if (obj[key].length === 1) {
                     obj[key] = obj[key][0];
@@ -127,10 +128,10 @@ class MPXDevTools {
         if (instance.$dev?.id === pageId) {
             return true;
         }
-        
+
         // 然后向上遍历父组件
         let current = instance;
-        while(current) {
+        while (current) {
             current = current.selectOwnerComponent();
             if (current) {
                 const currentId = current.$dev?.id;
@@ -191,19 +192,19 @@ class MpxDevtoolsComponentInfo {
             acc[key] = val;
             return acc;
         }, {});
-        const data = typeof instance?.$rawOptions.dataFn === "function" ? instance.$rawOptions.dataFn.call(instance) : instance.$rawOptions?.data || {};
-        this.data = Object.keys(data).reduce((acc, key) => {
+        const data = typeof instance?.$rawOptions.dataFn === "function" ? instance.$rawOptions.dataFn.call(instance) : instance.$rawOptions?.data;
+        this.data = Object.keys(data || {}).reduce((acc, key) => {
             const val = instance?.[key];
             acc[key] = val;
             return acc;
         }, {});
-        this.__mpx_file_src__ = instance.route  || this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
+        this.__mpx_file_src__ = instance.route || this.data?.__mpx_file_src__ || this.__mpx_file_src__ || "未知组件";
         this.parentId = instance?.selectOwnerComponent()?.$dev?.id || null;
     }
 }
 // 创建全局实例
 const mpxDevTools = new MPXDevTools();
 if (wx && typeof wx === "object") {
-    wx.mpxDevTools = mpxDevTools
+    wx.mpxDevTools = mpxDevTools;
 }
 export default mpxDevTools;
